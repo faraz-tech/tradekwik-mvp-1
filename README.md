@@ -32,17 +32,15 @@ cp apps/admin/.env.example apps/admin/.env.local
 
 ## Database (dev)
 
-The dev database runs in Docker on port **5433** (so it never clashes with a locally installed Postgres on 5432):
+Dev uses the locally installed PostgreSQL (service `postgresql-x64-15`, port 5432, database `tradekwik`). Set your password in `apps/api/.env` (`DATABASE_URL`).
+
+Alternative — Docker container instead of a local install:
 
 ```bash
-# one-time: create the container (auto-restarts with Docker Desktop)
-docker run -d --name tradekwik-postgres --restart unless-stopped \
+docker run -d --name tradekwik-postgres \
   -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=tradekwik \
   -p 5433:5432 -v tradekwik-pgdata:/var/lib/postgresql/data postgres:17-alpine
-
-# later: start/stop it
-docker start tradekwik-postgres
-docker stop tradekwik-postgres
+# then use port 5433 in DATABASE_URL
 ```
 
 Schema lives in `apps/api/src/db/schema.ts`; migrations in `apps/api/src/db/migrations/`.
