@@ -46,6 +46,8 @@ function setAuthCookie(res: Response, token: string): void {
     secure: process.env.NODE_ENV === 'production',
     maxAge: COOKIE_MAX_AGE_MS,
     path: '/',
+    // prod: set COOKIE_DOMAIN=.tradekwik.com so admin.tradekwik.com sees the cookie
+    domain: process.env.COOKIE_DOMAIN || undefined,
   });
 }
 
