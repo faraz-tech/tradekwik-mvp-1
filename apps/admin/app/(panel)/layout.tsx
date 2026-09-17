@@ -7,12 +7,18 @@ import type { AuthUserDto } from "@tradekwik/shared";
 import { logout, me, ApiFetchError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-const NAV = [
+const SELLER_NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/products", label: "Products" },
   { href: "/inquiries", label: "Inquiries" },
   { href: "/orders", label: "Orders" },
   { href: "/store-settings", label: "Store settings" },
+];
+
+const ADMIN_NAV = [
+  { href: "/super/overview", label: "Overview" },
+  { href: "/super/sellers", label: "Sellers" },
+  { href: "/super/inquiries", label: "Inquiries" },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -30,6 +36,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       });
   }, [router]);
 
+  // keep each role in its own section
+  useEffect(() => {
+    if (!user) return;
+    const inSuper = pathname.startsWith("/super");
+    if (user.role === "admin" && !inSuper) router.replace("/super/overview");
+    if (user.role === "seller" && inSuper) router.replace("/dashboard");
+  }, [user, pathname, router]);
+
+  const NAV = user?.role === "admin" ? ADMIN_NAV : SELLER_NAV;
+
   async function onLogout() {
     await logout().catch(() => undefined);
     router.replace("/login");
@@ -42,11 +58,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <p className="px-2 text-lg font-bold">
           Trade<span className="text-blue-700">Kwik</span>
         </p>
-        {user?.role === "seller" && (
-          <p className="mt-1 truncate px-2 text-xs text-muted-foreground">
-            {user.businessName}
-          </p>
-        )}
+        <p className="mt-1 truncate px-2 text-xs text-muted-foreground">
+          {user?.role === "seller"
+            ? user.businessName
+            : user?.role === "admin"
+              ? "Platform admin"
+              : ""}
+        </p>
         <nav className="mt-6 flex flex-1 flex-col gap-1">
           {NAV.map((item) => (
             <Link

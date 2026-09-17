@@ -6,4 +6,5 @@ export * from "./schemas/sitemap.js";
 export * from "./schemas/inquiries.js";
 export * from "./schemas/auth.js";
 export * from "./schemas/seller-panel.js";
+export * from "./schemas/admin-panel.js";
 export * from "./constants.js";

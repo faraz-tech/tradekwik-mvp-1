@@ -1,6 +1,12 @@
 import type {
+  AdminInquiryDto,
+  AdminLoginInput,
+  AdminSellerDto,
+  AdminUpdateSellerInput,
   ApiError,
   AuthUserDto,
+  CreateSellerInput,
+  PlatformOverviewDto,
   CategoryDto,
   CreateProductInput,
   LoginResponseDto,
@@ -61,6 +67,11 @@ export const login = (input: SellerLoginInput) =>
     method: "POST",
     body: JSON.stringify(input),
   });
+export const adminLogin = (input: AdminLoginInput) =>
+  request<LoginResponseDto>("/auth/admin/login", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 export const logout = () => request<{ ok: true }>("/auth/logout", { method: "POST" });
 export const me = () => request<AuthUserDto>("/auth/me");
 
@@ -106,6 +117,22 @@ export const updateProfile = (input: UpdateSellerProfileInput) =>
     method: "PATCH",
     body: JSON.stringify(input),
   });
+
+// ---- super admin ----
+export const adminListSellers = (status?: string) =>
+  request<AdminSellerDto[]>(`/admin/sellers${status ? `?status=${status}` : ""}`);
+export const adminCreateSeller = (input: CreateSellerInput) =>
+  request<AdminSellerDto>("/admin/sellers", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+export const adminUpdateSeller = (id: string, input: AdminUpdateSellerInput) =>
+  request<AdminSellerDto>(`/admin/sellers/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+export const adminListInquiries = () => request<AdminInquiryDto[]>("/admin/inquiries");
+export const adminOverview = () => request<PlatformOverviewDto>("/admin/overview");
 
 export const uploadImage = (file: File) => {
   const form = new FormData();

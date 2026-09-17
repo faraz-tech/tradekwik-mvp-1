@@ -13,6 +13,7 @@ import { OrderRequestsModule } from './modules/orders/order-requests.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { SellerModule } from './modules/seller/seller.module.js';
 import { UploadsModule } from './modules/uploads/uploads.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -34,6 +35,7 @@ import { AppService } from './app.service.js';
     AuthModule,
     SellerModule,
     UploadsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
