@@ -10,4 +10,9 @@ export class AppController {
   getHealth(): ApiResponse<HealthDto> {
     return { data: this.appService.getHealth() };
   }
+
+  @Get('health/db')
+  async getDbStats(): Promise<ApiResponse<Record<string, number>>> {
+    return { data: await this.appService.getDbStats() };
+  }
 }

@@ -30,6 +30,34 @@ cp apps/storefront/.env.example apps/storefront/.env.local
 cp apps/admin/.env.example apps/admin/.env.local
 ```
 
+## Database (dev)
+
+The dev database runs in Docker on port **5433** (so it never clashes with a locally installed Postgres on 5432):
+
+```bash
+# one-time: create the container (auto-restarts with Docker Desktop)
+docker run -d --name tradekwik-postgres --restart unless-stopped \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=tradekwik \
+  -p 5433:5432 -v tradekwik-pgdata:/var/lib/postgresql/data postgres:17-alpine
+
+# later: start/stop it
+docker start tradekwik-postgres
+docker stop tradekwik-postgres
+```
+
+Schema lives in `apps/api/src/db/schema.ts`; migrations in `apps/api/src/db/migrations/`.
+
+```bash
+pnpm --filter @tradekwik/api db:generate   # generate a migration after changing schema.ts
+pnpm --filter @tradekwik/api db:migrate    # apply migrations
+pnpm --filter @tradekwik/api db:seed       # wipe + insert launch data (3 sellers, 12 products)
+pnpm --filter @tradekwik/api db:studio     # browse data in Drizzle Studio
+```
+
+Verify: `GET http://localhost:4000/api/v1/health/db` returns row counts.
+
+Seeded logins (dev only): sellers `+919876500001..3` / `seller123`; admin `admin@tradekwik.com` / `admin123`.
+
 ## Run (dev)
 
 ```bash
