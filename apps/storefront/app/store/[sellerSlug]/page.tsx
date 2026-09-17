@@ -5,6 +5,7 @@ import { getSeller, getSellerProducts, getSitemapData } from "@/lib/api";
 import { telLink, waLink } from "@/lib/format";
 import { absoluteUrl, jsonLdString, localBusinessJsonLd } from "@/lib/seo";
 import { ProductCard } from "@/components/product-card";
+import { InquiryForm } from "@/components/inquiry-form";
 
 export const revalidate = 300;
 
@@ -94,6 +95,12 @@ export default async function StorePage({ params }: StorePageProps) {
         {/* Contact CTAs — phone-first */}
         <div className="mt-6 flex flex-wrap gap-3">
           <a
+            href="#inquiry"
+            className="rounded-full bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+          >
+            Send inquiry
+          </a>
+          <a
             href={waLink(seller.whatsappNumber, waText)}
             target="_blank"
             rel="noopener noreferrer"
@@ -124,6 +131,25 @@ export default async function StorePage({ params }: StorePageProps) {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Store-level inquiry */}
+      <section
+        id="inquiry"
+        className="mt-12 scroll-mt-24 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm lg:max-w-2xl"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">
+          Ask {seller.businessName} anything
+        </h2>
+        <p className="mb-4 mt-1 text-sm text-stone-500">
+          Looking for something specific? Send an inquiry and the seller will contact you.
+        </p>
+        <InquiryForm
+          sellerId={seller.id}
+          source="store_page"
+          whatsappHref={waLink(seller.whatsappNumber, waText)}
+          showQuantity={false}
+        />
       </section>
     </main>
   );

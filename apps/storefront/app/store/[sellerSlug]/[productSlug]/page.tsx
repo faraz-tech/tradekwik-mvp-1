@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct, getSitemapData } from "@/lib/api";
+import { getCategories, getProduct, getSitemapData } from "@/lib/api";
 import { priceLine, stockLabels, telLink, waLink } from "@/lib/format";
 import { absoluteUrl, jsonLdString, productJsonLd } from "@/lib/seo";
 import { MediaGallery } from "@/components/media-gallery";
+import { InquiryForm } from "@/components/inquiry-form";
+import { OrderForm } from "@/components/order-form";
+
+/** Categories whose products can be ordered/booked directly (not just inquired). */
+const ORDERABLE_CATEGORY_SLUGS = new Set(["ice-cream-desserts", "garments-tailoring"]);
 
 export const revalidate = 300;
 
@@ -50,14 +55,20 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { sellerSlug, productSlug } = await params;
-  const product = await getProduct(sellerSlug, productSlug);
+  const [product, categories] = await Promise.all([
+    getProduct(sellerSlug, productSlug),
+    getCategories(),
+  ]);
   if (!product) notFound();
 
   const { seller } = product;
   const pageUrl = absoluteUrl(`/store/${sellerSlug}/${productSlug}`);
   const stock = stockLabels[product.stockStatus];
   const waText = `Hi, I'm interested in "${product.name}" listed on TradeKwik. ${pageUrl}`;
+  const waHref = waLink(seller.whatsappNumber, waText);
   const specEntries = Object.entries(product.specs);
+  const categorySlug = categories.find((c) => c.id === product.categoryId)?.slug;
+  const orderable = categorySlug ? ORDERABLE_CATEGORY_SLUGS.has(categorySlug) : false;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -88,21 +99,35 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </span>
           </div>
 
-          {/* CTAs — inquiry form arrives in the next phase; WhatsApp is primary until then */}
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          {/* CTAs — inquiry form is primary; WhatsApp & call are the fast lanes */}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <a
-              href={waLink(seller.whatsappNumber, waText)}
+              href="#inquiry"
+              className="rounded-full bg-blue-700 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-blue-800"
+            >
+              Send inquiry
+            </a>
+            {orderable && (
+              <a
+                href="#order"
+                className="rounded-full bg-amber-500 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-amber-600"
+              >
+                Order / Book
+              </a>
+            )}
+            <a
+              href={waHref}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-green-600 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-green-700"
             >
-              Send inquiry on WhatsApp
+              WhatsApp
             </a>
             <a
               href={telLink(seller.phone)}
               className="rounded-full border border-stone-300 bg-white px-6 py-3 text-center text-sm font-semibold text-stone-800 hover:bg-stone-50"
             >
-              📞 Call seller
+              📞 Call
             </a>
           </div>
 
@@ -157,6 +182,46 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </section>
           )}
         </div>
+      </div>
+
+      {/* Inquiry + order forms */}
+      <div className="mt-12 grid gap-8 lg:grid-cols-2">
+        <section
+          id="inquiry"
+          className="scroll-mt-24 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"
+        >
+          <h2 className="text-lg font-semibold text-stone-900">
+            Send an inquiry for this product
+          </h2>
+          <p className="mb-4 mt-1 text-sm text-stone-500">
+            Ask about price, delivery, or anything else — the seller replies directly.
+          </p>
+          <InquiryForm
+            sellerId={product.sellerId}
+            productId={product.id}
+            source="product_page"
+            whatsappHref={waHref}
+          />
+        </section>
+
+        {orderable && (
+          <section
+            id="order"
+            className="scroll-mt-24 rounded-2xl border border-amber-200 bg-amber-50/40 p-6 shadow-sm"
+          >
+            <h2 className="text-lg font-semibold text-stone-900">Order / book now</h2>
+            <p className="mb-4 mt-1 text-sm text-stone-500">
+              Place a direct order or an advance booking. The seller confirms with you —
+              no payment now.
+            </p>
+            <OrderForm
+              sellerId={product.sellerId}
+              productId={product.id}
+              productName={product.name}
+              whatsappHref={waHref}
+            />
+          </section>
+        )}
       </div>
     </main>
   );

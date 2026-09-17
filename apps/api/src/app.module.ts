@@ -2,11 +2,14 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DbModule } from './db/db.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { SellersModule } from './modules/sellers/sellers.module.js';
 import { ProductsModule } from './modules/products/products.module.js';
 import { SitemapModule } from './modules/sitemap/sitemap.module.js';
+import { InquiriesModule } from './modules/inquiries/inquiries.module.js';
+import { OrderRequestsModule } from './modules/orders/order-requests.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -14,11 +17,17 @@ import { AppService } from './app.service.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 5 }],
+      errorMessage: 'Too many requests. Please wait a minute and try again.',
+    }),
     DbModule,
     CategoriesModule,
     SellersModule,
     ProductsModule,
     SitemapModule,
+    InquiriesModule,
+    OrderRequestsModule,
   ],
   controllers: [AppController],
   providers: [
