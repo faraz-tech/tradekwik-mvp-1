@@ -2,6 +2,8 @@
 
 Multi-vendor B2B + B2C commerce platform for Indian small/medium businesses. Sellers get a public storefront and a private admin panel; buyers discover products and send inquiries/order requests (no cart/checkout in v1).
 
+**📖 Full command reference, testing guide, workflows & troubleshooting: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**
+
 ## Monorepo layout
 
 | App | Stack | Port | Purpose |
