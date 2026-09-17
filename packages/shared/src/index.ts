@@ -4,4 +4,6 @@ export * from "./schemas/sellers.js";
 export * from "./schemas/products.js";
 export * from "./schemas/sitemap.js";
 export * from "./schemas/inquiries.js";
+export * from "./schemas/auth.js";
+export * from "./schemas/seller-panel.js";
 export * from "./constants.js";

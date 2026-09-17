@@ -1,12 +1,20 @@
+import path from 'node:path';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('api/v1');
+  app.use(cookieParser());
+
+  // uploaded images (dev: local disk)
+  const uploadsDir = path.resolve(process.env.UPLOADS_DIR ?? './uploads');
+  app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
 
   const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://localhost:3001')
     .split(',')
@@ -18,6 +26,8 @@ async function bootstrap() {
     .setTitle('TradeKwik API')
     .setDescription('Multi-vendor B2B/B2C commerce platform — REST API')
     .setVersion('1.0')
+    .addBearerAuth()
+    .addCookieAuth('token')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, cleanupOpenApiDoc(document));

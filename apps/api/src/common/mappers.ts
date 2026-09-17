@@ -3,8 +3,12 @@ import type {
   PublicProductDto,
   PublicSellerDto,
   SellerCardDto,
+  SellerInquiryDto,
+  SellerOrderRequestDto,
+  SellerProductDto,
+  SellerProfileDto,
 } from '@tradekwik/shared';
-import type { Category, Product, Seller } from '../db/schema.js';
+import type { Category, Inquiry, OrderRequest, Product, Seller } from '../db/schema.js';
 
 /** DB row → public DTO mappers. Anything not mapped here never leaves the API. */
 
@@ -50,6 +54,51 @@ export function toSellerCardDto(row: Seller): SellerCardDto {
     whatsappNumber: row.whatsappNumber,
     phone: row.phone,
     logoUrl: row.logoUrl,
+  };
+}
+
+export function toSellerProfileDto(row: Seller): SellerProfileDto {
+  return { ...toPublicSellerDto(row), gstNumber: row.gstNumber };
+}
+
+export function toSellerProductDto(row: Product): SellerProductDto {
+  return {
+    ...toPublicProductDto(row),
+    isPublished: row.isPublished,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function toSellerInquiryDto(row: Inquiry, productName: string | null): SellerInquiryDto {
+  return {
+    id: row.id,
+    productId: row.productId,
+    productName,
+    buyerName: row.buyerName,
+    buyerPhone: row.buyerPhone,
+    buyerCity: row.buyerCity,
+    buyerType: row.buyerType,
+    quantity: row.quantity,
+    message: row.message,
+    source: row.source,
+    status: row.status,
+    sellerNotes: row.sellerNotes,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function toSellerOrderRequestDto(row: OrderRequest): SellerOrderRequestDto {
+  return {
+    id: row.id,
+    buyerName: row.buyerName,
+    buyerPhone: row.buyerPhone,
+    deliveryAddress: row.deliveryAddress,
+    orderType: row.orderType,
+    eventDate: row.eventDate,
+    items: row.items,
+    status: row.status,
+    sellerNotes: row.sellerNotes,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
