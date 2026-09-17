@@ -119,7 +119,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-green-600 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-green-700"
+              className="rounded-full bg-green-700 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-green-800"
             >
               WhatsApp
             </a>
@@ -136,7 +136,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             href={`/store/${seller.slug}`}
             className="mt-6 block rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-blue-300"
           >
-            <p className="text-xs uppercase tracking-wide text-stone-400">Sold by</p>
+            <p className="text-xs uppercase tracking-wide text-stone-500">Sold by</p>
             <p className="mt-1 flex items-center gap-2 font-medium text-stone-900">
               {seller.businessName}
               {seller.isVerified && (

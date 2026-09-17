@@ -9,7 +9,7 @@ export function MediaGallery({ media, name }: { media: ProductMediaItem[]; name:
 
   if (media.length === 0) {
     return (
-      <div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-stone-100 text-stone-400">
+      <div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-stone-100 text-stone-500">
         No media
       </div>
     );

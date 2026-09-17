@@ -34,7 +34,7 @@ export default async function InquirySuccessPage({ searchParams }: SuccessPagePr
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700"
+            className="rounded-full bg-green-700 px-6 py-3 text-sm font-semibold text-white hover:bg-green-800"
           >
             Continue on WhatsApp
           </a>

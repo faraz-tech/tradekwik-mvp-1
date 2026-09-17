@@ -16,9 +16,15 @@ const categoryEmoji: Record<string, string> = {
 };
 
 export default async function HomePage() {
+  // degrade gracefully if the API is briefly unavailable — never 500 the landing page
   const [categories, latest] = await Promise.all([
-    getCategories(),
-    searchProducts({ pageSize: 8 }),
+    getCategories().catch(() => []),
+    searchProducts({ pageSize: 8 }).catch(() => ({
+      items: [],
+      page: 1,
+      pageSize: 8,
+      total: 0,
+    })),
   ]);
 
   const sellers = [

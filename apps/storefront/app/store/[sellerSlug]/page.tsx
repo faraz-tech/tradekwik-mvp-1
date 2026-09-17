@@ -104,7 +104,7 @@ export default async function StorePage({ params }: StorePageProps) {
             href={waLink(seller.whatsappNumber, waText)}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
+            className="rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800"
           >
             WhatsApp seller
           </a>

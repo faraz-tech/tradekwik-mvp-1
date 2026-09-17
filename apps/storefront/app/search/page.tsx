@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { searchProducts } from "@/lib/api";
+import Link from "next/link";
+import { getCategories, searchProducts } from "@/lib/api";
 import { ProductCard } from "@/components/product-card";
 import { Pagination } from "@/components/pagination";
 
@@ -19,7 +20,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q, page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
   const query = q?.trim() || undefined;
-  const results = await searchProducts({ q: query, page });
+  const [results, categories] = await Promise.all([
+    searchProducts({ q: query, page }),
+    getCategories().catch(() => []),
+  ]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -29,6 +33,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <p className="mt-1 text-sm text-stone-500">
         {results.total} product{results.total === 1 ? "" : "s"} found
       </p>
+
+      {categories.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/category/${category.slug}`}
+              className="rounded-full border border-stone-300 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-700 hover:border-blue-400 hover:text-blue-700"
+            >
+              {category.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {results.items.length === 0 ? (
         <div className="mt-12 text-center text-stone-500">

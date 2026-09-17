@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { HeaderSearch } from "@/components/header-search";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,14 +37,7 @@ function Header() {
         <Link href="/" className="text-xl font-bold tracking-tight text-blue-700">
           Trade<span className="text-stone-900">Kwik</span>
         </Link>
-        <form action="/search" className="order-last w-full sm:order-none sm:w-auto sm:flex-1 sm:max-w-md">
-          <input
-            type="search"
-            name="q"
-            placeholder="Search products, machines, services…"
-            className="w-full rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-sm outline-none focus:border-blue-500 focus:bg-white"
-          />
-        </form>
+        <HeaderSearch />
         <nav className="ml-auto">
           <Link href="/search" className="text-sm font-medium text-stone-600 hover:text-blue-700">
             Browse all

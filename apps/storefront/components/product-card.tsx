@@ -30,7 +30,7 @@ export function ProductCard({ product, sellerSlug, showSeller = false }: Product
             className="object-cover transition group-hover:scale-[1.02]"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-stone-400">
+          <div className="flex h-full items-center justify-center text-sm text-stone-500">
             No image
           </div>
         )}
