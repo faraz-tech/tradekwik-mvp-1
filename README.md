@@ -70,6 +70,8 @@ pnpm --filter @tradekwik/admin dev        # http://localhost:3001
 
 Note: `packages/shared` builds to `dist/`. Turbo builds it automatically before dependents; if you run an app directly after changing shared code, run `pnpm --filter @tradekwik/shared build` first (or keep `pnpm dev` running — it watches).
 
+Note: `pnpm --filter @tradekwik/storefront build` pre-renders store/product pages from live API data — start the API (and database) first. If the API is down, the build still succeeds but skips pre-rendering (pages render on demand).
+
 ## Build / checks
 
 ```bash
