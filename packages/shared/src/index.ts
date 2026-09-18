@@ -7,4 +7,7 @@ export * from "./schemas/inquiries.js";
 export * from "./schemas/auth.js";
 export * from "./schemas/seller-panel.js";
 export * from "./schemas/admin-panel.js";
+export * from "./schemas/buyer.js";
+export * from "./schemas/verification.js";
+export * from "./permissions.js";
 export * from "./constants.js";

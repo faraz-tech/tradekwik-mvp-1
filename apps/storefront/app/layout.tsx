@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { HeaderSearch } from "@/components/header-search";
+import { AccountNav } from "@/components/account-nav";
+import { BuyerAuthProvider } from "@/components/buyer-auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +16,8 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const SELLER_APP_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -38,10 +42,17 @@ function Header() {
           Trade<span className="text-stone-900">Kwik</span>
         </Link>
         <HeaderSearch />
-        <nav className="ml-auto">
+        <nav className="ml-auto flex items-center gap-4">
           <Link href="/search" className="text-sm font-medium text-stone-600 hover:text-blue-700">
             Browse all
           </Link>
+          <a
+            href={`${SELLER_APP_URL}/register`}
+            className="hidden text-sm font-medium text-stone-600 hover:text-blue-700 sm:inline"
+          >
+            Sell on TradeKwik
+          </a>
+          <AccountNav />
         </nav>
       </div>
     </header>
@@ -57,6 +68,13 @@ function Footer() {
           Connecting buyers directly with Indian small businesses. Inquire, negotiate on
           WhatsApp or phone, and deal direct.
         </p>
+        <p className="mt-3">
+          <a href={`${SELLER_APP_URL}/register`} className="font-medium text-blue-700 hover:underline">
+            Are you a manufacturer, wholesaler or retailer? Register your business →
+          </a>
+          <span className="mx-2 text-stone-300">|</span>
+          <a href={`${SELLER_APP_URL}/login`} className="hover:underline">Seller login</a>
+        </p>
         <p className="mt-4 text-xs">© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>
     </footer>
@@ -70,9 +88,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <Header />
-        <div className="flex-1">{children}</div>
-        <Footer />
+        <BuyerAuthProvider>
+          <Header />
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </BuyerAuthProvider>
       </body>
     </html>
   );

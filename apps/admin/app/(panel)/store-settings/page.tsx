@@ -6,6 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import {
+  SELLER_KINDS,
+  SELLER_KIND_LABELS,
+  TEAM_SIZE_RANGES,
   updateSellerProfileSchema,
   type SellerProfileDto,
 } from "@tradekwik/shared";
@@ -21,6 +24,8 @@ type FormOutput = z.output<typeof updateSellerProfileSchema>;
 
 const optionalNumber = { setValueAs: (v: unknown) => (v === "" || v == null ? null : v) };
 const optionalText = { setValueAs: (v: unknown) => (v === "" ? null : v) };
+const selectClass =
+  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none";
 
 export default function StoreSettingsPage() {
   const [profile, setProfile] = useState<SellerProfileDto | null>(null);
@@ -55,6 +60,9 @@ export default function StoreSettingsPage() {
         deliveryRadiusKm: data.deliveryRadiusKm,
         logoUrl: data.logoUrl,
         coverImageUrl: data.coverImageUrl,
+        sellerKind: data.sellerKind,
+        foundedYear: data.foundedYear,
+        teamSizeRange: data.teamSizeRange,
       });
     });
   }, [reset]);
@@ -115,6 +123,35 @@ export default function StoreSettingsPage() {
               <Label htmlFor="businessName">Business name</Label>
               <Input id="businessName" {...register("businessName")} />
               {err("businessName")}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="sellerKind">Business type</Label>
+                <select id="sellerKind" className={selectClass} {...register("sellerKind")}>
+                  {SELLER_KINDS.map((kind) => (
+                    <option key={kind} value={kind}>
+                      {SELLER_KIND_LABELS[kind]}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Shown as a badge; buyers can filter by it.</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="foundedYear">Founded (year)</Label>
+                <Input id="foundedYear" type="number" min={1900} max={2100} {...register("foundedYear", optionalNumber)} />
+                {err("foundedYear")}
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="teamSizeRange">Team size</Label>
+                <select id="teamSizeRange" className={selectClass} {...register("teamSizeRange", optionalText)}>
+                  <option value="">Not specified</option>
+                  {TEAM_SIZE_RANGES.map((range) => (
+                    <option key={range} value={range}>
+                      {range} people
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="description">About your business</Label>

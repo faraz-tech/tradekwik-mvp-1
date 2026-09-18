@@ -4,7 +4,9 @@ import type {
   CategoryDto,
   ProductWithSellerDto,
   PublicProductDto,
+  PublicSellerAboutDto,
   PublicSellerDto,
+  SellerKind,
   SitemapDataDto,
   StoreProductsMeta,
   StoreProductsQuery,
@@ -47,6 +49,11 @@ export function getCategories(): Promise<CategoryDto[]> {
 
 export function getSeller(slug: string): Promise<PublicSellerDto | null> {
   return apiGetOrNull<PublicSellerDto>(`/sellers/${encodeURIComponent(slug)}`);
+}
+
+/** Company details, process, social links, videos and owners for the About page. */
+export function getSellerAbout(slug: string): Promise<PublicSellerAboutDto | null> {
+  return apiGetOrNull<PublicSellerAboutDto>(`/sellers/${encodeURIComponent(slug)}/about`);
 }
 
 export interface StoreProductsResult extends StoreProductsMeta {
@@ -95,12 +102,14 @@ export interface ProductSearchResult {
 export async function searchProducts(params: {
   q?: string;
   category?: string;
+  sellerKind?: SellerKind;
   page?: number;
   pageSize?: number;
 }): Promise<ProductSearchResult> {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   if (params.category) search.set("category", params.category);
+  if (params.sellerKind) search.set("sellerKind", params.sellerKind);
   if (params.page) search.set("page", String(params.page));
   if (params.pageSize) search.set("pageSize", String(params.pageSize));
   const qs = search.toString();

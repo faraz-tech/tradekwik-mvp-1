@@ -102,6 +102,7 @@ export class AdminService {
           whatsappNumber: normalizePhone(input.whatsappNumber),
           email: input.email ?? null,
           gstNumber: input.gstNumber ?? null,
+          sellerKind: input.sellerKind,
           servesPanIndia: input.servesPanIndia,
           deliveryRadiusKm: input.deliveryRadiusKm ?? null,
           status: input.status,

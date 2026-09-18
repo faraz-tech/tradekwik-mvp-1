@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type {
   ListingType,
+  PublicSellerAboutDto,
   ProductWithSellerDto,
   PublicProductDto,
   PublicSellerDto,
@@ -9,11 +10,21 @@ import type {
 } from '@tradekwik/shared';
 import { DB } from '../../db/db.module.js';
 import type { Database } from '../../db/client.js';
-import { products, sellers, type Seller } from '../../db/schema.js';
 import {
+  products,
+  sellerDocuments,
+  sellerOwners,
+  sellerProfiles,
+  sellers,
+  type Seller,
+} from '../../db/schema.js';
+import {
+  toCompanyProfilePublicDto,
+  toPublicDocumentDto,
   toPublicProductDto,
   toPublicSellerDto,
   toSellerCardDto,
+  toSellerOwnerDto,
 } from '../../common/mappers.js';
 
 export interface StoreProductsResult {
@@ -44,6 +55,35 @@ export class SellersService {
 
   async getProfile(slug: string): Promise<PublicSellerDto> {
     return toPublicSellerDto(await this.requireActiveSeller(slug));
+  }
+
+  /** Company details + people for the public About page. */
+  async getAbout(slug: string): Promise<PublicSellerAboutDto> {
+    const seller = await this.requireActiveSeller(slug);
+    const [[profile], owners, verifiedDocs] = await Promise.all([
+      this.db.select().from(sellerProfiles).where(eq(sellerProfiles.sellerId, seller.id)).limit(1),
+      this.db
+        .select()
+        .from(sellerOwners)
+        .where(eq(sellerOwners.sellerId, seller.id))
+        .orderBy(asc(sellerOwners.sortOrder), asc(sellerOwners.createdAt)),
+      this.db
+        .select()
+        .from(sellerDocuments)
+        .where(and(eq(sellerDocuments.sellerId, seller.id), eq(sellerDocuments.status, 'verified')))
+        .orderBy(asc(sellerDocuments.kind)),
+    ]);
+    return {
+      seller: toPublicSellerDto(seller),
+      company: toCompanyProfilePublicDto(profile, seller),
+      owners: owners.map(toSellerOwnerDto),
+      trust: {
+        isVerified: seller.isVerified,
+        verifiedAt: seller.verifiedAt ? seller.verifiedAt.toISOString() : null,
+        verifiedKinds: [...new Set(verifiedDocs.map((d) => d.kind))],
+        publicDocuments: verifiedDocs.filter((d) => d.isPublic).map(toPublicDocumentDto),
+      },
+    };
   }
 
   /** Paginated, filterable catalogue of a store. */

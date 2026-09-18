@@ -8,7 +8,8 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 export function middleware(request: NextRequest) {
   const hasToken = request.cookies.has("token");
-  const isLogin = request.nextUrl.pathname === "/login";
+  const path = request.nextUrl.pathname;
+  const isLogin = path === "/login" || path === "/register";
 
   if (!hasToken && !isLogin) {
     return NextResponse.redirect(new URL("/login", request.url));

@@ -5,7 +5,12 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { createSellerSchema, type CategoryDto } from "@tradekwik/shared";
+import {
+  SELLER_KINDS,
+  SELLER_KIND_LABELS,
+  createSellerSchema,
+  type CategoryDto,
+} from "@tradekwik/shared";
 import { adminCreateSeller, getCategories, ApiFetchError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +37,7 @@ export default function OnboardSellerPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(createSellerSchema),
-    defaultValues: { servesPanIndia: false, status: "active" },
+    defaultValues: { servesPanIndia: false, status: "active", sellerKind: "retailer" },
   });
 
   useEffect(() => {
@@ -87,6 +92,16 @@ export default function OnboardSellerPage() {
                 </select>
                 {err(errors.categoryId?.message)}
               </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="sellerKind">Business type *</Label>
+              <select id="sellerKind" className={selectClass} {...register("sellerKind")}>
+                {SELLER_KINDS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {SELLER_KIND_LABELS[kind]}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="description">Description</Label>

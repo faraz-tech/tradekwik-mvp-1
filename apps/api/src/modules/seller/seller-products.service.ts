@@ -52,6 +52,8 @@ export class SellerProductsService {
         priceOnRequest: input.priceOnRequest,
         stockStatus: input.stockStatus,
         listingType: input.listingType,
+        priceTiers: input.priceTiers,
+        wholesaleOnly: input.wholesaleOnly,
         media: input.media,
         isPublished: input.isPublished,
         seoTitle: input.seoTitle ?? null,

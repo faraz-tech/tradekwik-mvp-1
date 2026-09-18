@@ -5,15 +5,23 @@
  */
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 import { createDb } from './client.js';
 import {
+  buyerDocuments,
+  buyers,
   categories,
   inquiries,
+  orderEvents,
   orderRequests,
   platformAdmins,
   products,
+  sellerOwners,
+  sellerProfiles,
+  sellerDocuments,
   sellerUsers,
   sellers,
+  shipments,
 } from './schema.js';
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -26,11 +34,17 @@ const { db, pool } = createDb(DATABASE_URL);
 
 const SELLER_PASSWORD = 'seller123';
 const ADMIN_PASSWORD = 'admin123';
+const BUYER_PASSWORD = 'buyer123';
 
 async function seed() {
   console.log('Wiping existing data...');
+  await db.delete(orderEvents);
+  await db.delete(shipments);
+  await db.delete(sellerDocuments);
+  await db.delete(buyerDocuments);
   await db.delete(inquiries);
   await db.delete(orderRequests);
+  await db.delete(buyers);
   await db.delete(products);
   await db.delete(sellerUsers);
   await db.delete(sellers);
@@ -68,6 +82,10 @@ async function seed() {
         status: 'active',
         servesPanIndia: true,
         deliveryRadiusKm: null,
+        sellerKind: 'manufacturer',
+        foundedYear: 2009,
+        teamSizeRange: '21-50',
+        verifiedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
       },
       {
         slug: 'meltz-ice-cream',
@@ -86,6 +104,9 @@ async function seed() {
         status: 'active',
         servesPanIndia: false,
         deliveryRadiusKm: 25,
+        sellerKind: 'retailer',
+        foundedYear: 2018,
+        teamSizeRange: '6-20',
       },
       {
         slug: 'perfect-fit-tailors',
@@ -104,9 +125,186 @@ async function seed() {
         status: 'active',
         servesPanIndia: false,
         deliveryRadiusKm: 40,
+        sellerKind: 'retailer',
+        foundedYear: 2011,
+        teamSizeRange: '1-5',
+      },
+      {
+        slug: 'gujarat-thread-and-trims',
+        businessName: 'Gujarat Thread & Trims',
+        categoryId: embroideryCat.id,
+        description:
+          'Wholesale supplier of embroidery threads, zari, sequins and trims to boutiques, job-workers and garment units. Carton quantities only, dispatched from our Surat godown within 24 hours.',
+        city: 'Surat',
+        state: 'Gujarat',
+        address: 'Godown 7, Ring Road Textile Market, Surat, Gujarat 395002',
+        phone: '+919876500004',
+        whatsappNumber: '+919876500004',
+        email: 'sales@gujaratthread.example.com',
+        gstNumber: '24KLMNO9012P3Z7',
+        isVerified: false,
+        status: 'active',
+        servesPanIndia: true,
+        deliveryRadiusKm: null,
+        sellerKind: 'wholesaler',
+        foundedYear: 2014,
+        teamSizeRange: '6-20',
       },
     ])
     .returning();
+  const wholesaleSeller = (await db.select().from(sellers).where(eq(sellers.slug, 'gujarat-thread-and-trims')))[0];
+
+  console.log('Inserting company profiles + owners...');
+  await db.insert(sellerProfiles).values([
+    {
+      sellerId: embroiderySeller.id,
+      legalName: 'Shakti Embroidery Machines Pvt. Ltd.',
+      registrationType: 'private_limited',
+      registrationYear: 2009,
+      udyamNumber: 'UDYAM-GJ-22-0012345',
+      capacityNote: '40 single-head and 8 multi-head machines per month. Larger orders scheduled in batches.',
+      leadTimeNote: 'Single-head: ready stock, dispatch in 2-3 days. Multi-head: 4-6 weeks from advance.',
+      paymentTerms: '50% advance with order, balance before dispatch. Bank transfer / UPI. GST invoice provided.',
+      returnPolicy: '1-year on-site service warranty. Manufacturing defects replaced free within 30 days of installation.',
+      processSteps: [
+        { title: 'Frame fabrication', description: 'Laser-cut MS frames welded and powder-coated in-house.' },
+        { title: 'Head assembly', description: 'Needle bars, hooks and motors fitted and aligned by trained fitters.' },
+        { title: 'Quality check', description: 'Every machine runs a 2-hour stitch test on saree fabric before packing.' },
+        { title: 'Packing & dispatch', description: 'Wooden crate packing; dispatched by transport with LR number shared on WhatsApp.' },
+      ],
+      socialLinks: [
+        { platform: 'website', url: 'https://shaktiembroidery.example.com' },
+        { platform: 'youtube', url: 'https://www.youtube.com/@shaktiembroidery' },
+        { platform: 'instagram', url: 'https://www.instagram.com/shaktiembroidery' },
+        { platform: 'indiamart', url: 'https://www.indiamart.com/shakti-embroidery' },
+      ],
+      videos: [
+        { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Factory tour — Pandesara unit' },
+        { url: 'https://www.youtube.com/watch?v=ysz5S6PUM-U', title: 'Single-head aari machine demo' },
+      ],
+      premisesPhotos: [
+        { url: 'https://placehold.co/800x600?text=Assembly%20Floor', alt: 'Assembly floor' },
+        { url: 'https://placehold.co/800x600?text=Testing%20Bay', alt: 'Stitch testing bay' },
+      ],
+    },
+    {
+      sellerId: wholesaleSeller.id,
+      legalName: 'Gujarat Thread & Trims',
+      registrationType: 'partnership',
+      registrationYear: 2014,
+      udyamNumber: 'UDYAM-GJ-22-0098765',
+      capacityNote: 'Stock of 400+ SKUs; 2,000 cartons dispatched per month.',
+      leadTimeNote: 'Same-day dispatch for stock items ordered before 2 pm.',
+      paymentTerms: 'Full advance for new buyers; 15-day credit for verified repeat buyers.',
+      returnPolicy: 'Damaged cartons replaced if reported with photos within 48 hours of delivery.',
+      processSteps: [],
+      socialLinks: [{ platform: 'whatsapp_catalogue', url: 'https://wa.me/c/919876500004' }],
+      videos: [],
+      premisesPhotos: [],
+    },
+  ]);
+
+  await db.insert(sellerOwners).values([
+    {
+      sellerId: embroiderySeller.id,
+      fullName: 'Rakesh Patel',
+      designation: 'Founder & Managing Director',
+      photoUrl: 'https://placehold.co/300x300?text=RP',
+      bio: 'Started as a machine fitter in 1998, founded Shakti in a 200 sq ft unit in 2009. Personally handles every multi-head installation.',
+      yearsExperience: 26,
+      languages: ['Gujarati', 'Hindi', 'English'],
+      isPrimary: true,
+      sortOrder: 0,
+    },
+    {
+      sellerId: embroiderySeller.id,
+      fullName: 'Meena Patel',
+      designation: 'Director — Sales & Service',
+      photoUrl: null,
+      bio: 'Runs the service desk and the pan-India dealer network.',
+      yearsExperience: 12,
+      languages: ['Gujarati', 'Hindi'],
+      isPrimary: false,
+      sortOrder: 1,
+    },
+    {
+      sellerId: iceCreamSeller.id,
+      fullName: 'Sneha Deshmukh',
+      designation: 'Owner',
+      photoUrl: null,
+      bio: 'Hotel-management graduate; started Meltz as a single counter in 2018.',
+      yearsExperience: 8,
+      languages: ['Marathi', 'Hindi', 'English'],
+      isPrimary: true,
+      sortOrder: 0,
+    },
+    {
+      sellerId: wholesaleSeller.id,
+      fullName: 'Harshad Mehta',
+      designation: 'Partner',
+      photoUrl: null,
+      bio: 'Third-generation textile trader from Surat.',
+      yearsExperience: 20,
+      languages: ['Gujarati', 'Hindi'],
+      isPrimary: true,
+      sortOrder: 0,
+    },
+  ]);
+
+  console.log('Inserting compliance documents...');
+  const pdf = (name: string) => `https://placehold.co/800x1000?text=${encodeURIComponent(name)}`;
+  const reviewedAt = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
+  const verified = (kind: (typeof sellerDocuments.$inferInsert)['kind'], title: string, extra: Partial<typeof sellerDocuments.$inferInsert> = {}) => ({
+    sellerId: embroiderySeller.id,
+    kind,
+    title,
+    fileUrl: pdf(title),
+    mimeType: 'image/png',
+    sizeBytes: 120000,
+    status: 'verified' as const,
+    reviewedAt,
+    ...extra,
+  });
+  await db.insert(sellerDocuments).values([
+    verified('gst_certificate', 'GST certificate 24ABCDE1234F1Z5', { isPublic: true, issuedOn: '2017-07-01' }),
+    verified('pan', 'PAN — Shakti Embroidery Machines Pvt Ltd'),
+    verified('udyam', 'Udyam registration UDYAM-GJ-22-0012345', { isPublic: true, issuedOn: '2020-09-15' }),
+    verified('bank_proof', 'Cancelled cheque — HDFC Bank'),
+    verified('factory_license', 'Factory license — Pandesara GIDC', { issuedOn: '2024-04-01', expiresOn: '2027-03-31' }),
+    verified('owner_id', 'Aadhaar — Rakesh Patel'),
+    verified('iso', 'ISO 9001:2015 certificate', { isPublic: true, issuedOn: '2023-01-10', expiresOn: '2026-10-05' }),
+    verified('brochure', 'Shakti machines brochure 2026', { isPublic: true }),
+    // Gujarat Thread & Trims: uploaded, awaiting the verifier
+    {
+      sellerId: wholesaleSeller.id,
+      kind: 'gst_certificate',
+      title: 'GST certificate 24KLMNO9012P3Z7',
+      fileUrl: pdf('GST Gujarat Thread'),
+      mimeType: 'application/pdf',
+      sizeBytes: 240000,
+      status: 'pending',
+    },
+    {
+      sellerId: wholesaleSeller.id,
+      kind: 'pan',
+      title: 'PAN — Gujarat Thread & Trims',
+      fileUrl: pdf('PAN Gujarat Thread'),
+      mimeType: 'application/pdf',
+      sizeBytes: 90000,
+      status: 'pending',
+    },
+    {
+      sellerId: wholesaleSeller.id,
+      kind: 'bank_proof',
+      title: 'Cancelled cheque — SBI',
+      fileUrl: pdf('Cheque Gujarat Thread'),
+      mimeType: 'image/jpeg',
+      sizeBytes: 150000,
+      status: 'rejected',
+      reviewedAt,
+      rejectionReason: 'Cheque image is blurred; account number not readable.',
+    },
+  ]);
 
   console.log('Inserting seller users + platform admin...');
   const passwordHash = await bcrypt.hash(SELLER_PASSWORD, 10);
@@ -135,13 +333,29 @@ async function seed() {
       passwordHash,
       role: 'owner',
     },
+    {
+      sellerId: wholesaleSeller.id,
+      name: 'Harshad Mehta',
+      phone: '+919876500004',
+      email: 'harshad@gujaratthread.example.com',
+      passwordHash,
+      role: 'owner',
+    },
+    {
+      sellerId: embroiderySeller.id,
+      name: 'Vijay (Dispatch)',
+      phone: '+919876500011',
+      email: null,
+      passwordHash,
+      role: 'logistics',
+    },
   ]);
 
-  await db.insert(platformAdmins).values({
-    name: 'TradeKwik Admin',
-    email: 'admin@tradekwik.com',
-    passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 10),
-  });
+  const adminHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  await db.insert(platformAdmins).values([
+    { name: 'TradeKwik Admin', email: 'admin@tradekwik.com', passwordHash: adminHash, role: 'super_admin' },
+    { name: 'Verification Desk', email: 'verifier@tradekwik.com', passwordHash: adminHash, role: 'verifier' },
+  ]);
 
   console.log('Inserting products...');
   const img = (name: string, alt: string) => ({
@@ -170,6 +384,10 @@ async function seed() {
       priceRetail: 24500,
       priceBulk: 22000,
       minBulkQty: 3,
+      priceTiers: [
+        { minQty: 3, price: 22000 },
+        { minQty: 10, price: 20500 },
+      ],
       stockStatus: 'in_stock',
       media: [
         img('Aari Single Head', 'Single head aari embroidery machine'),
@@ -242,6 +460,11 @@ async function seed() {
       priceRetail: 750,
       priceBulk: 550,
       minBulkQty: 10,
+      priceTiers: [
+        { minQty: 10, price: 550 },
+        { minQty: 50, price: 480 },
+        { minQty: 200, price: 420 },
+      ],
       stockStatus: 'in_stock',
       listingType: 'accessory',
       media: [img('Needle Set', 'Aari machine spare needle set')],
@@ -266,6 +489,72 @@ async function seed() {
       stockStatus: 'in_stock',
       listingType: 'tool',
       media: [img('Wooden Adda Frame', 'Adjustable wooden aari embroidery frame')],
+      isPublished: true,
+    },
+
+    // ---- Gujarat Thread & Trims (wholesaler) ----
+    {
+      sellerId: wholesaleSeller.id,
+      categoryId: embroideryCat.id,
+      slug: 'viscose-embroidery-thread-120d-2-box-of-100',
+      name: 'Viscose Embroidery Thread 120D/2 — Box of 100 cones',
+      description:
+        'High-sheen viscose rayon embroidery thread, 120D/2, 5,000 m cones. 200+ shades. Sold by the box of 100 cones (single shade or assorted).',
+      specs: { Material: 'Viscose rayon', Count: '120D/2', 'Cone length': '5,000 m', 'Box size': '100 cones' },
+      priceRetail: null,
+      priceBulk: 3200,
+      minBulkQty: 1,
+      priceTiers: [
+        { minQty: 1, price: 3200 },
+        { minQty: 10, price: 3000 },
+        { minQty: 50, price: 2800 },
+      ],
+      wholesaleOnly: true,
+      stockStatus: 'in_stock',
+      listingType: 'product',
+      media: [img('Viscose Thread Box', 'Box of viscose embroidery thread cones')],
+      isPublished: true,
+      seoTitle: 'Viscose Embroidery Thread 120D/2 Wholesale — Box of 100',
+    },
+    {
+      sellerId: wholesaleSeller.id,
+      categoryId: embroideryCat.id,
+      slug: 'zari-thread-golden-carton-50-spools',
+      name: 'Golden Zari Thread — Carton of 50 spools',
+      description:
+        'Imitation golden zari for aari, zardozi and machine embroidery. 50 spools of 1,000 m per carton.',
+      specs: { Type: 'Imitation zari', 'Spool length': '1,000 m', 'Carton size': '50 spools' },
+      priceRetail: null,
+      priceBulk: 4500,
+      minBulkQty: 1,
+      priceTiers: [
+        { minQty: 1, price: 4500 },
+        { minQty: 20, price: 4200 },
+      ],
+      wholesaleOnly: true,
+      stockStatus: 'in_stock',
+      listingType: 'product',
+      media: [img('Golden Zari Carton', 'Carton of golden zari spools')],
+      isPublished: true,
+    },
+    {
+      sellerId: wholesaleSeller.id,
+      categoryId: embroideryCat.id,
+      slug: 'sequins-assorted-1kg-pack',
+      name: 'Sequins Assorted Colours — 1 kg pack',
+      description: 'Flat 4 mm sequins, assorted colours. Minimum order 10 packs.',
+      specs: { Size: '4 mm', Pack: '1 kg' },
+      priceRetail: null,
+      priceBulk: 380,
+      minBulkQty: 10,
+      priceTiers: [
+        { minQty: 10, price: 380 },
+        { minQty: 100, price: 340 },
+      ],
+      wholesaleOnly: true,
+      stockStatus: 'in_stock',
+      listingType: 'accessory',
+      media: [img('Sequins 1kg', 'Assorted sequins pack')],
       isPublished: true,
     },
 
@@ -429,17 +718,152 @@ async function seed() {
     },
   ]);
 
+  console.log('Inserting demo buyer + orders...');
+  const [buyer] = await db
+    .insert(buyers)
+    .values({
+      fullName: 'Priya Sharma',
+      phone: '+919876500099',
+      email: 'priya@boutique.example.com',
+      passwordHash: await bcrypt.hash(BUYER_PASSWORD, 10),
+      buyerType: 'business',
+      companyName: 'Priya Boutique',
+      gstin: '27PQRST3456U1Z9',
+      city: 'Pune',
+      state: 'Maharashtra',
+      defaultAddress: 'Shop 12, FC Road, Pune, Maharashtra 411004',
+      verificationStatus: 'review_pending',
+      verificationRequestedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    })
+    .returning();
+  await db.insert(buyerDocuments).values({
+    buyerId: buyer.id,
+    kind: 'gst_certificate',
+    title: 'GST certificate — Priya Boutique',
+    fileUrl: 'https://placehold.co/800x1000?text=GST%20Priya%20Boutique',
+    mimeType: 'application/pdf',
+    sizeBytes: 200000,
+    status: 'pending',
+  });
+
+  const aariMachine = (await db.select().from(products).where(eq(products.slug, 'aari-embroidery-machine-single-head')))[0];
+  const needleSet = (await db.select().from(products).where(eq(products.slug, 'aari-machine-spare-needle-set')))[0];
+
+  const [inq] = await db
+    .insert(inquiries)
+    .values({
+      sellerId: embroiderySeller.id,
+      productId: aariMachine.id,
+      buyerId: buyer.id,
+      buyerName: buyer.fullName,
+      buyerPhone: buyer.phone,
+      buyerCity: 'Pune',
+      buyerType: 'business',
+      quantity: 2,
+      message: 'Need 2 single-head machines for my boutique. Can you deliver to Pune and what is the bulk price?',
+      source: 'product_page',
+      status: 'won',
+      sellerNotes: 'Quoted 22,000 each incl. training. Converted to order.',
+    })
+    .returning();
+
+  const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+
+  const [order1] = await db
+    .insert(orderRequests)
+    .values({
+      sellerId: embroiderySeller.id,
+      buyerId: buyer.id,
+      inquiryId: inq.id,
+      buyerName: buyer.fullName,
+      buyerPhone: buyer.phone,
+      deliveryAddress: 'Shop 12, FC Road, Pune, Maharashtra 411004',
+      orderType: 'bulk',
+      items: [{ productId: aariMachine.id, name: aariMachine.name, qty: 2, unitPrice: 22000 }],
+      status: 'dispatched',
+      transportPreference: 'VRL Logistics, Pune (Market Yard) branch',
+      freightTerm: 'to_pay',
+      quotedAmount: 44000,
+      agreedAmount: 44000,
+      expectedDeliveryOn: daysAgo(-3).toISOString().slice(0, 10),
+      createdAt: daysAgo(6),
+    })
+    .returning();
+
+  await db.insert(shipments).values({
+    orderRequestId: order1.id,
+    status: 'in_transit',
+    transportName: 'VRL Logistics',
+    transportPhone: '+919876511111',
+    transportBranch: 'Surat (Sachin GIDC) → Pune (Market Yard)',
+    lrNumber: 'VRL-SRT-2026-118834',
+    lrDocumentUrl: 'https://placehold.co/800x1000?text=Bilty%20VRL-SRT-2026-118834',
+    vehicleNumber: 'GJ05 AT 4471',
+    driverPhone: '+919876522222',
+    packagesCount: 2,
+    dispatchedAt: daysAgo(1),
+    expectedDeliveryOn: daysAgo(-3).toISOString().slice(0, 10),
+    notes: 'Wooden crates. Freight to-pay at Pune branch.',
+  });
+
+  await db.insert(orderEvents).values([
+    { orderRequestId: order1.id, status: 'new', actorType: 'buyer', actorId: buyer.id, actorName: buyer.fullName, note: 'Order request placed.', createdAt: daysAgo(6) },
+    { orderRequestId: order1.id, status: 'confirmed', actorType: 'seller', actorName: 'Rakesh Patel', note: 'Confirmed 2 units at ₹22,000 each incl. training. 50% advance received.', createdAt: daysAgo(5) },
+    { orderRequestId: order1.id, status: 'in_progress', actorType: 'seller', actorName: 'Rakesh Patel', note: 'Machines under final testing.', createdAt: daysAgo(3) },
+    { orderRequestId: order1.id, status: 'ready', actorType: 'seller', actorName: 'Vijay (Dispatch)', note: 'Packed in wooden crates, balance payment received.', createdAt: daysAgo(2) },
+    { orderRequestId: order1.id, status: null, actorType: 'seller', actorName: 'Vijay (Dispatch)', note: 'Transport booked: VRL Logistics, LR/bilty no. VRL-SRT-2026-118834.', createdAt: daysAgo(1) },
+    { orderRequestId: order1.id, status: 'dispatched', actorType: 'seller', actorName: 'Vijay (Dispatch)', note: 'Left Surat godown. Call VRL Pune branch for delivery.', createdAt: daysAgo(1) },
+  ]);
+
+  const [order2] = await db
+    .insert(orderRequests)
+    .values({
+      sellerId: embroiderySeller.id,
+      buyerId: buyer.id,
+      buyerName: buyer.fullName,
+      buyerPhone: buyer.phone,
+      deliveryAddress: 'Shop 12, FC Road, Pune, Maharashtra 411004',
+      orderType: 'bulk',
+      items: [{ productId: needleSet.id, name: needleSet.name, qty: 20, unitPrice: 550 }],
+      status: 'completed',
+      freightTerm: 'included',
+      quotedAmount: 11000,
+      agreedAmount: 11000,
+      createdAt: daysAgo(30),
+    })
+    .returning();
+  await db.insert(shipments).values({
+    orderRequestId: order2.id,
+    status: 'delivered',
+    transportName: 'Delhivery Surface',
+    lrNumber: 'DLV-7788-2201',
+    dispatchedAt: daysAgo(28),
+    deliveredAt: daysAgo(25),
+    expectedDeliveryOn: daysAgo(25).toISOString().slice(0, 10),
+  });
+  await db.insert(orderEvents).values([
+    { orderRequestId: order2.id, status: 'new', actorType: 'buyer', actorId: buyer.id, actorName: buyer.fullName, note: 'Order request placed.', createdAt: daysAgo(30) },
+    { orderRequestId: order2.id, status: 'confirmed', actorType: 'seller', actorName: 'Rakesh Patel', createdAt: daysAgo(29) },
+    { orderRequestId: order2.id, status: 'dispatched', actorType: 'seller', actorName: 'Vijay (Dispatch)', note: 'Sent by courier, LR DLV-7788-2201.', createdAt: daysAgo(28) },
+    { orderRequestId: order2.id, status: 'completed', actorType: 'buyer', actorId: buyer.id, actorName: buyer.fullName, note: 'Received in good condition.', createdAt: daysAgo(25) },
+  ]);
+
   const counts = {
     categories: 3,
-    sellers: 3,
-    sellerUsers: 3,
+    sellers: 4,
+    sellerUsers: 5,
     platformAdmins: 1,
-    products: 13,
+    products: 16,
+    buyers: 1,
+    orders: 2,
+    sellerDocuments: 11,
   };
   console.log('Seed complete:', counts);
   console.log('\nLogin credentials (dev only):');
-  console.log(`  Sellers  → phone +919876500001 / +919876500002 / +919876500003, password: ${SELLER_PASSWORD}`);
+  console.log(`  Sellers  → phone +919876500001 / 02 / 03 / 04 (owners), +919876500011 (logistics staff), password: ${SELLER_PASSWORD}`);
+  console.log(`  Buyer    → phone +919876500099, password: ${BUYER_PASSWORD}`);
   console.log(`  Admin    → admin@tradekwik.com, password: ${ADMIN_PASSWORD}`);
+  console.log(`  Verifier → verifier@tradekwik.com, password: ${ADMIN_PASSWORD}`);
 }
 
 seed()

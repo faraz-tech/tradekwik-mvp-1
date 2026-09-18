@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SELLER_KINDS, SELLER_KIND_LABELS, type SellerKind } from "@tradekwik/shared";
 import { getCategories, searchProducts } from "@/lib/api";
 import { ProductCard } from "@/components/product-card";
 import { Pagination } from "@/components/pagination";
@@ -13,17 +14,25 @@ export const metadata: Metadata = {
 };
 
 interface SearchPageProps {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; kind?: string }>;
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, kind: kindParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
   const query = q?.trim() || undefined;
+  const sellerKind = SELLER_KINDS.find((k) => k === kindParam) as SellerKind | undefined;
   const [results, categories] = await Promise.all([
-    searchProducts({ q: query, page }),
+    searchProducts({ q: query, page, sellerKind }),
     getCategories().catch(() => []),
   ]);
+  const kindHref = (kind?: SellerKind) => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (kind) params.set("kind", kind);
+    const qs = params.toString();
+    return qs ? `/search?${qs}` : "/search";
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -33,6 +42,26 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <p className="mt-1 text-sm text-stone-500">
         {results.total} product{results.total === 1 ? "" : "s"} found
       </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-stone-500">Seller type:</span>
+        {[undefined, ...SELLER_KINDS].map((kind) => {
+          const selected = kind === sellerKind;
+          return (
+            <Link
+              key={kind ?? "all"}
+              href={kindHref(kind)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                selected
+                  ? "bg-stone-900 text-white"
+                  : "border border-stone-300 bg-white text-stone-700 hover:border-blue-400 hover:text-blue-700"
+              }`}
+            >
+              {kind ? SELLER_KIND_LABELS[kind] : "All"}
+            </Link>
+          );
+        })}
+      </div>
 
       {categories.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -66,7 +95,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         pageSize={results.pageSize}
         total={results.total}
         basePath="/search"
-        query={{ q: query }}
+        query={{ q: query, kind: sellerKind }}
       />
     </main>
   );

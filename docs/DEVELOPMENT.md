@@ -21,25 +21,28 @@ Everything you need to run, test, and work on this project. For a project overvi
 
 ### Dev logins (from seed data — dev only)
 
-| Role | Login | Password | Where |
+| Who | Where | Login | Password |
 | --- | --- | --- | --- |
-| Seller — Shakti Embroidery (Surat) | phone `9876500001` | `seller123` | http://localhost:3001 → Seller tab |
-| Seller — Meltz Ice Cream (Nagpur) | phone `9876500002` | `seller123` | http://localhost:3001 → Seller tab |
-| Seller — Perfect Fit Tailors (Jaipur) | phone `9876500003` | `seller123` | http://localhost:3001 → Seller tab |
-| Platform admin | `admin@tradekwik.com` | `admin123` | http://localhost:3001 → Admin tab |
+| Seller owner — Shakti Embroidery (manufacturer) | http://localhost:3001 | phone `9876500001` | `seller123` |
+| Seller owner — Meltz Ice Cream (retailer) | http://localhost:3001 | phone `9876500002` | `seller123` |
+| Seller owner — Perfect Fit Tailors (retailer) | http://localhost:3001 | phone `9876500003` | `seller123` |
+| Seller owner — Gujarat Thread & Trims (wholesaler) | http://localhost:3001 | phone `9876500004` | `seller123` |
+| Seller staff — Shakti, **logistics** role (orders + transport only) | http://localhost:3001 | phone `9876500011` | `seller123` |
+| Super admin | http://localhost:3001 (Admin tab) | `admin@tradekwik.com` | `admin123` |
+| Verifier (documents & buyer verification only) | http://localhost:3001 (Admin tab) | `verifier@tradekwik.com` | `admin123` |
+| Buyer — Priya Sharma (has 2 demo orders, one in transit with a bilty) | http://localhost:3000/account/login | phone `9876500099` | `buyer123` |
 
-Phone logins accept the number with or without `+91`.
+Seller and buyer sessions use different cookies (`token` vs `buyer_token`), so you can be logged in as both in one browser.
 
-### The commands you'll use 90% of the time
+### Key flows to try
 
-```bash
-pnpm dev                                   # run everything (API + storefront + admin + shared watcher)
-pnpm build                                 # build everything in dependency order (cached by turbo)
-pnpm typecheck                             # typecheck the whole monorepo
-pnpm --filter @tradekwik/api db:seed       # reset the database to fresh demo data
-```
-
----
+1. **Order lifecycle:** log in as buyer → `/account/orders` → open the dispatched order → see LR/bilty, call transporter, confirm receipt.
+2. **Seller side:** log in as Shakti owner → Inquiries → *Convert to order* → Orders → quote → mark ready → enter transport details (bilty) → mark dispatched.
+3. **Roles:** log in as the logistics staff (`9876500011`) — only Dashboard and Orders are visible; product APIs return 403.
+4. **Trust pages:** http://localhost:3000/store/shakti-embroidery-machines/about (company, people, process, videos). Edit via seller admin → *Company profile* and *Owners & team*.
+5. **Wholesale:** http://localhost:3000/search?kind=wholesaler and the Gujarat Thread store — tiered pricing, wholesale-only listings, minimum quantities.
+6. **Seller sign-up:** http://localhost:3001/register — creates a *pending* store; approve it under super admin → Sellers, then log in with the chosen mobile number. The dashboard shows a setup checklist.
+7. **Verification:** log in as the verifier → *Verification desk* — Gujarat Thread has pending documents and Priya has requested business verification. Approve them and watch the Verified badge appear on the store and the buyer's profile. Sellers upload under *Documents & verification*.
 
 ## 2. First-time setup
 
@@ -99,7 +102,7 @@ Dev DB: local PostgreSQL (service `postgresql-x64-15`), database `tradekwik`, po
 ```bash
 pnpm --filter @tradekwik/api db:generate   # after editing schema.ts: diff → new migration .sql
 pnpm --filter @tradekwik/api db:migrate    # apply pending migrations to DATABASE_URL
-pnpm --filter @tradekwik/api db:seed       # WIPES all data, inserts 3 sellers / 13 products / logins
+pnpm --filter @tradekwik/api db:seed       # WIPES all data, inserts 4 sellers / 16 products / 1 buyer / 2 demo orders / 11 documents / logins
 pnpm --filter @tradekwik/api db:studio     # Drizzle Studio — browse & edit rows in the browser
 ```
 

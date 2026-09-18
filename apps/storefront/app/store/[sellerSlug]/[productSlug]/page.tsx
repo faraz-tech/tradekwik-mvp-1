@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategories, getProduct, getSitemapData } from "@/lib/api";
-import { priceLine, stockLabels, telLink, waLink } from "@/lib/format";
+import { minOrderQty, priceLine, stockLabels, telLink, waLink } from "@/lib/format";
 import { absoluteUrl, jsonLdString, productJsonLd } from "@/lib/seo";
 import { MediaGallery } from "@/components/media-gallery";
 import { InquiryForm } from "@/components/inquiry-form";
 import { OrderForm } from "@/components/order-form";
+import { PriceTiers } from "@/components/price-tiers";
+import { SellerKindBadge } from "@/components/seller-kind-badge";
+import { ShareButton } from "@/components/share-button";
 
 /** Categories whose products can be ordered/booked directly (not just inquired). */
 const ORDERABLE_CATEGORY_SLUGS = new Set(["ice-cream-desserts", "garments-tailoring"]);
@@ -69,6 +72,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const specEntries = Object.entries(product.specs);
   const categorySlug = categories.find((c) => c.id === product.categoryId)?.slug;
   const orderable = categorySlug ? ORDERABLE_CATEGORY_SLUGS.has(categorySlug) : false;
+  const minQty = minOrderQty(product);
+  const shareText = `${product.name} — ${priceLine(product)} from ${seller.businessName} (${seller.city}). Found it on TradeKwik.`;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -98,6 +103,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {stock.label}
             </span>
           </div>
+          {product.wholesaleOnly && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-900">
+              Wholesale only{minQty ? ` · minimum order ${minQty} units` : ""}. Inquire for a trade quote.
+            </p>
+          )}
 
           {/* CTAs — inquiry form is primary; WhatsApp & call are the fast lanes */}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -129,7 +139,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             >
               📞 Call
             </a>
+            <ShareButton url={pageUrl} title={product.name} text={shareText} />
           </div>
+
+          <PriceTiers product={product} />
 
           {/* Seller card */}
           <Link
@@ -137,8 +150,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             className="mt-6 block rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-blue-300"
           >
             <p className="text-xs uppercase tracking-wide text-stone-500">Sold by</p>
-            <p className="mt-1 flex items-center gap-2 font-medium text-stone-900">
+            <p className="mt-1 flex flex-wrap items-center gap-2 font-medium text-stone-900">
               {seller.businessName}
+              <SellerKindBadge kind={seller.sellerKind} />
               {seller.isVerified && (
                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
                   ✓ Verified
@@ -219,6 +233,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
               productId={product.id}
               productName={product.name}
               whatsappHref={waHref}
+              wholesaleOnly={product.wholesaleOnly}
+              minQty={minQty ?? undefined}
             />
           </section>
         )}

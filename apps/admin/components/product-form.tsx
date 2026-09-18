@@ -12,6 +12,7 @@ import {
   LISTING_TYPE_LABELS,
   STOCK_STATUSES,
   type CategoryDto,
+  type PriceTier,
   type ProductMediaItem,
   type SellerProductDto,
 } from "@tradekwik/shared";
@@ -55,6 +56,7 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
     product ? Object.entries(product.specs).map(([key, value]) => ({ key, value })) : [],
   );
   const [media, setMedia] = useState<ProductMediaItem[]>(product?.media ?? []);
+  const [tiers, setTiers] = useState<PriceTier[]>(product?.priceTiers ?? []);
   const [uploading, setUploading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const videoUrlRef = useRef<HTMLInputElement>(null);
@@ -78,6 +80,8 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
           priceBulk: product.priceBulk ?? undefined,
           minBulkQty: product.minBulkQty ?? undefined,
           priceOnRequest: product.priceOnRequest,
+          wholesaleOnly: product.wholesaleOnly,
+          priceTiers: product.priceTiers,
           stockStatus: product.stockStatus,
           listingType: product.listingType,
           media: product.media,
@@ -89,6 +93,8 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
           specs: {},
           media: [],
           priceOnRequest: false,
+          wholesaleOnly: false,
+          priceTiers: [],
           isPublished: false,
           stockStatus: "in_stock",
           listingType: "product",
@@ -113,6 +119,15 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
   useEffect(() => {
     setValue("media", media);
   }, [media, setValue]);
+
+  useEffect(() => {
+    setValue(
+      "priceTiers",
+      tiers
+        .filter((t) => t.minQty > 0 && t.price >= 0)
+        .sort((a, b) => a.minQty - b.minQty),
+    );
+  }, [tiers, setValue]);
 
   async function onFilesSelected(files: FileList | null) {
     if (!files?.length) return;
@@ -244,6 +259,50 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
             <input type="checkbox" className="h-4 w-4" {...register("priceOnRequest")} />
             Price on request (hide prices, buyers must inquire)
           </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" className="h-4 w-4" {...register("wholesaleOnly")} />
+            Wholesale only (no single-piece orders; card shows the lowest tier and minimum quantity)
+          </label>
+
+          <div className="grid gap-2 rounded-md border p-3">
+            <p className="text-sm font-medium">Quantity price breaks (wholesale tiers)</p>
+            <p className="text-xs text-muted-foreground">
+              Per-unit price when the buyer orders at least this quantity. Leave empty for a single price.
+            </p>
+            {tiers.map((tier, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Min qty</span>
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-24"
+                  value={tier.minQty || ""}
+                  onChange={(e) =>
+                    setTiers((rows) => rows.map((r, i) => (i === index ? { ...r, minQty: Number(e.target.value) } : r)))
+                  }
+                />
+                <span className="text-xs text-muted-foreground">→ ₹ / unit</span>
+                <Input
+                  type="number"
+                  min={0}
+                  className="w-32"
+                  value={tier.price || ""}
+                  onChange={(e) =>
+                    setTiers((rows) => rows.map((r, i) => (i === index ? { ...r, price: Number(e.target.value) } : r)))
+                  }
+                />
+                <Button type="button" variant="ghost" size="sm" onClick={() => setTiers((rows) => rows.filter((_, i) => i !== index))}>
+                  ✕
+                </Button>
+              </div>
+            ))}
+            {tiers.length < 6 && (
+              <Button type="button" variant="outline" size="sm" className="justify-self-start" onClick={() => setTiers((rows) => [...rows, { minQty: 0, price: 0 }])}>
+                + Add tier
+              </Button>
+            )}
+            {fieldError("priceTiers")}
+          </div>
         </CardContent>
       </Card>
 

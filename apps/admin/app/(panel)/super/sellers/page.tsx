@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
+  SELLER_KIND_LABELS,
   SELLER_STATUSES,
   type AdminSellerDto,
   type SellerStatus,
@@ -105,7 +106,7 @@ export default function SellersPage() {
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      /{seller.slug} · {seller.city}, {seller.state}
+                      {SELLER_KIND_LABELS[seller.sellerKind]} · /{seller.slug} · {seller.city}, {seller.state}
                     </p>
                   </TableCell>
                   <TableCell>

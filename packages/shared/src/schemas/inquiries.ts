@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BUYER_TYPES, INQUIRY_SOURCES, ORDER_TYPES } from "../constants.js";
+import { BUYER_TYPES, FREIGHT_TERMS, INQUIRY_SOURCES, ORDER_TYPES } from "../constants.js";
 import { indianPhoneSchema } from "./common.js";
 
 /** POST /inquiries — public inquiry form. */
@@ -50,6 +50,10 @@ export const createOrderRequestSchema = z
     orderType: z.enum(ORDER_TYPES),
     eventDate: z.iso.date().optional(),
     items: z.array(orderItemInputSchema).min(1, "Add at least one item").max(20),
+    /** e.g. "Send via VRL Logistics, Nagpur branch" — many buyers have a preferred transporter. */
+    transportPreference: z.string().trim().max(300).optional(),
+    freightTerm: z.enum(FREIGHT_TERMS).optional(),
+    buyerNotes: z.string().trim().max(1000).optional(),
   })
   .refine((data) => data.orderType !== "booking" || Boolean(data.eventDate), {
     message: "Please pick a date for your booking",

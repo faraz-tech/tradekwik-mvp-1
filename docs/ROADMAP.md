@@ -4,6 +4,8 @@ Planning document for everything after the MVP. It records **what** we want to b
 
 Status legend: 🟢 done · 🟡 in progress · ⚪ planned · 🔵 idea / needs decision
 
+> **Update 2026-09-19:** phases A–H built (seller kinds + tiered pricing, company/owner profiles, sharing, roles & permissions, buyer accounts + customer dashboard, order lifecycle with transport/bilty tracking, **seller document verification and buyer business verification**). Sections below keep the original design; the status markers say what is live. Still open: phone OTP, QR codes, courier tracking APIs, order documents (invoice / e-way bill), and the parked ideas in §6.
+
 ---
 
 ## 0. Where we are today (MVP, Sept 2026)
@@ -29,7 +31,7 @@ Everything below builds on this.
 
 ## 2. Feature plan
 
-### 2.1 Seller owner details, experience and background — ⚪ planned
+### 2.1 Seller owner details, experience and background — 🟢 done (seller admin → Owners & team; storefront `/store/<slug>/about`)
 
 **Why:** buyers trust people before they trust companies. Showing the owner, years in business and background raises inquiry conversion.
 
@@ -55,7 +57,7 @@ sellers
 
 ---
 
-### 2.2 Company details, documents and processes — ⚪ planned
+### 2.2 Company details, documents and processes — 🟢 done (company profile, process steps, social links, YouTube, premises photos, public certificates/brochures via the document flow in §2.5)
 
 **Why:** transparency and traceability. Buyers (especially business buyers) want GST number, registration, factory photos, production process and capacity before a bulk order.
 
@@ -107,7 +109,7 @@ seller_media
 
 ---
 
-### 2.3 Customer dashboard — ⚪ planned
+### 2.3 Customer dashboard — 🟢 done (`/account`: overview, orders with transport/bilty details, inquiries, profile; order documents section not yet)
 
 **Why:** buyers need one place to track inquiries, orders, logistics and documents instead of WhatsApp threads.
 
@@ -151,7 +153,7 @@ inquiries / order_requests
 
 ---
 
-### 2.4 Roles and permissions (customer, seller, staff, admin) — ⚪ planned
+### 2.4 Roles and permissions (customer, seller, staff, admin) — 🟢 done (`packages/shared/src/permissions.ts`, `PermissionsGuard`, team management page; audit log = `order_events` for orders only so far)
 
 **Why:** today there are two flat roles (seller user with `owner | staff`, platform admin). Buyers, seller teams with different duties, and admin teams all need finer control.
 
@@ -182,7 +184,7 @@ inquiries / order_requests
 
 ---
 
-### 2.5 Company onboarding with certificates and compliance — ⚪ planned
+### 2.5 Company onboarding with certificates and compliance — 🟢 done (seller admin → Documents & verification; super admin → Verification desk; badge auto-granted when all required kinds are verified and unexpired). Decisions: the checklist per seller kind lives in `SELLER_DOCUMENT_REQUIREMENTS` (code, not a config table); reviewing is done by TradeKwik staff with the `verifier` role; expiry reminders are shown in the desk (30-day window) — no automated messages yet.
 
 **Why:** "Verified seller" must mean something. Verification becomes a documented, repeatable process instead of a checkbox.
 
@@ -222,7 +224,7 @@ sellers
 
 ---
 
-### 2.6 Customer verification — ⚪ planned
+### 2.6 Customer verification — 🟡 mostly done (buyers upload GST/PAN and request review from their profile; verifier approves → `business_verified` badge shown to sellers on inquiries). **Phone OTP not built** — needs an SMS provider (open question 1).
 
 **Why:** sellers get spam and fake bulk inquiries. A verified buyer badge lets sellers prioritise, and unlocks sensitive info (full GSTIN, bulk pricing, credit terms).
 
@@ -240,7 +242,7 @@ sellers
 
 ---
 
-### 2.7 Seller kinds: manufacturer, wholesaler, retailer — ⚪ planned
+### 2.7 Seller kinds: manufacturer, wholesaler, retailer — 🟢 done (badge, search filter, tiered pricing, wholesale-only listings)
 
 **Why:** buyers search differently ("factory direct" vs "buy 1 piece"), pricing rules differ, and verification requirements differ (§2.5).
 
@@ -268,7 +270,7 @@ sellers
 
 ---
 
-### 2.8 One-click sharing of products and stores — ⚪ planned
+### 2.8 One-click sharing of products and stores — 🟢 done (native share sheet + WhatsApp/Facebook/X/LinkedIn/Telegram/Email/Copy with UTM tags; QR codes and share analytics not yet)
 
 **Why:** most buying decisions in this market are discussed with a partner, a family member or a colleague first. A share button turns one visitor into two, and shared links are the cheapest acquisition channel we have.
 
@@ -296,19 +298,44 @@ No login needed; this is pure storefront work plus one small analytics endpoint.
 
 ---
 
+### 2.10 Seller self-registration — 🟢 done
+
+Public sign-up at `/register` in the seller app (linked from the storefront header and footer). Creates the store as `pending` with the owner login; login is refused with an "awaiting approval" message until a super admin approves it from *Sellers*. After approval the dashboard shows a setup checklist (store settings → company profile → first product → documents → Verified badge). Admin gets an email stub on each registration. Phone OTP still pending (needs SMS provider).
+
+---
+
+### 2.9 Order lifecycle & logistics (inquiry → delivered) — 🟢 done
+
+Built 2026-09-19. Statuses: `new → confirmed → in_progress → ready → dispatched → delivered → completed`, plus `cancelled`.
+Transitions are validated server-side (`ORDER_NEXT_STATUSES`); every change writes an `order_events` row (who, when, note, visible-to-buyer).
+
+**The bilty flow (what the seller does at the transport office):**
+
+1. Seller confirms the order and quotes (from an inquiry via *Convert to order*, or directly on the order).
+2. Seller books the goods with a transporter, gets the **LR / bilty number**, and enters it on the order in the admin app (transporter, branch/route, LR no., vehicle, driver phone, packages, expected date, photo of the bilty).
+3. Only then can the order be marked **Dispatched** — the API refuses without transport details.
+4. The buyer's dashboard shows the LR number, transporter phone (one-tap call), vehicle and expected date, and gets a WhatsApp notification (stub).
+5. Buyer taps **I received the goods** → order `completed`, shipment `delivered`, seller notified.
+
+Buyers can state a preferred transporter and freight terms (to-pay / paid / included) when ordering. A `logistics` seller role can enter transport details without seeing products or inquiries.
+
+**Not yet:** courier API tracking, e-way bill / invoice upload on the order, multi-shipment orders, buyer-side proof of delivery photo.
+
+---
+
 ## 3. Suggested order of work
 
 | Phase | Scope | Depends on |
 | --- | --- | --- |
-| A | Seller kind (§2.7 model + badge + search filter) | — |
-| B | Company profile + owner details + public documents/media (§2.1, §2.2) | A |
-| C | Roles & permissions refactor + audit log (§2.4) | — (do before adding more actors) |
-| D | Verification workflow for sellers (§2.5) | B, C |
-| E | Buyer accounts with OTP, link inquiries/orders (§2.4 buyer part) | C |
-| F | Customer dashboard: inquiries, orders, shipments, documents (§2.3) | E |
-| G | Buyer verification (§2.6) | E |
-| H | Tiered pricing, kind-specific pricing UI (§2.7) | A |
-| S | Share buttons, rich previews, QR codes (§2.8) — independent, can run any time | — |
+| A 🟢 | Seller kind (§2.7 model + badge + search filter) | — |
+| B 🟢 | Company profile + owner details + public documents/media (§2.1, §2.2) | A |
+| C 🟢 | Roles & permissions refactor + audit log (§2.4) | — (do before adding more actors) |
+| D 🟢 | Verification workflow for sellers (§2.5) | B, C |
+| E 🟡 | Buyer accounts (password; OTP later), link inquiries/orders (§2.4 buyer part) | C |
+| F 🟢 | Customer dashboard: inquiries, orders, shipments (§2.3) | E |
+| G 🟢 | Buyer verification review flow (§2.6) | E |
+| H 🟢 | Tiered pricing, kind-specific pricing UI (§2.7) | A |
+| S 🟢 | Share buttons (QR codes pending) (§2.8) | — |
 
 A and C are small and unblock everything else; B is the visible trust win. F is the largest piece. S is independent and can be slotted in whenever a quick, visible improvement is wanted.
 

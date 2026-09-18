@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -136,6 +137,14 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {mode === "seller" ? <SellerLoginForm /> : <AdminLoginForm />}
+          {mode === "seller" && (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              New to TradeKwik?{" "}
+              <Link href="/register" className="font-medium text-blue-700 hover:underline">
+                Register your business
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </main>

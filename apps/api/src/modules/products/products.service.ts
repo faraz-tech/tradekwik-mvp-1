@@ -27,6 +27,9 @@ export class ProductsService {
     if (query.category) {
       conditions.push(eq(categories.slug, query.category));
     }
+    if (query.sellerKind) {
+      conditions.push(eq(sellers.sellerKind, query.sellerKind));
+    }
     if (query.q) {
       const pattern = `%${query.q}%`;
       const textMatch = or(

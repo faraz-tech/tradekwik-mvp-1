@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSeller, getSellerProducts, getSitemapData } from "@/lib/api";
 import { telLink, waLink } from "@/lib/format";
@@ -7,6 +8,8 @@ import { absoluteUrl, jsonLdString, localBusinessJsonLd } from "@/lib/seo";
 import { LISTING_TYPES, STORE_SORTS, type ListingType, type StoreSort } from "@tradekwik/shared";
 import { StoreListings, type StoreListingsState } from "@/components/store-listings";
 import { InquiryForm } from "@/components/inquiry-form";
+import { SellerKindBadge } from "@/components/seller-kind-badge";
+import { ShareButton } from "@/components/share-button";
 
 export const revalidate = 300;
 
@@ -89,6 +92,7 @@ export default async function StorePage({ params, searchParams }: StorePageProps
           <div className="min-w-0 flex-1">
             <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-stone-900">
               {seller.businessName}
+              <SellerKindBadge kind={seller.sellerKind} />
               {seller.isVerified && (
                 <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                   ✓ Verified seller
@@ -97,6 +101,7 @@ export default async function StorePage({ params, searchParams }: StorePageProps
             </h1>
             <p className="mt-1 text-sm text-stone-500">
               {seller.city}, {seller.state}
+              {seller.foundedYear ? ` · Since ${seller.foundedYear}` : ""}
               {seller.servesPanIndia
                 ? " · Delivers all over India"
                 : seller.deliveryRadiusKm
@@ -108,6 +113,12 @@ export default async function StorePage({ params, searchParams }: StorePageProps
                 {seller.description}
               </p>
             )}
+            <Link
+              href={`/store/${seller.slug}/about`}
+              className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
+            >
+              About the company, people &amp; process →
+            </Link>
           </div>
         </div>
 
@@ -133,6 +144,11 @@ export default async function StorePage({ params, searchParams }: StorePageProps
           >
             📞 Call now
           </a>
+          <ShareButton
+            url={storeUrl}
+            title={seller.businessName}
+            text={`Check out ${seller.businessName} (${seller.city}) on TradeKwik.`}
+          />
         </div>
       </section>
 

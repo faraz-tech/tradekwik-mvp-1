@@ -13,7 +13,7 @@ export class InquiriesService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async create(input: CreateInquiryInput): Promise<CreatedResourceDto> {
+  async create(input: CreateInquiryInput, buyerId: string | null = null): Promise<CreatedResourceDto> {
     const [seller] = await this.db
       .select()
       .from(sellers)
@@ -47,8 +47,9 @@ export class InquiriesService {
       .values({
         sellerId: seller.id,
         productId: input.productId ?? null,
+        buyerId,
         buyerName: input.buyerName,
-        buyerPhone: input.buyerPhone,
+        buyerPhone: input.buyerPhone.startsWith('+91') ? input.buyerPhone : `+91${input.buyerPhone}`,
         buyerCity: input.buyerCity ?? null,
         buyerType: input.buyerType,
         quantity: input.quantity ?? null,

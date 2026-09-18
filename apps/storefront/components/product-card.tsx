@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductWithSellerDto, PublicProductDto } from "@tradekwik/shared";
-import { firstImage, priceShort, stockLabels } from "@/lib/format";
+import { firstImage, minOrderQty, priceShort, sellerKindLabel, stockLabels } from "@/lib/format";
 
 interface ProductCardProps {
   product: PublicProductDto & Partial<Pick<ProductWithSellerDto, "seller">>;
@@ -40,13 +40,18 @@ export function ProductCard({ product, sellerSlug, showSeller = false }: Product
           {product.name}
         </h3>
         <p className="text-sm font-semibold text-stone-900">{priceShort(product)}</p>
+        {product.wholesaleOnly && (
+          <p className="text-xs font-medium text-amber-800">
+            Wholesale{minOrderQty(product) ? ` · min ${minOrderQty(product)} units` : ""}
+          </p>
+        )}
         <div className="mt-auto flex items-center justify-between gap-2 pt-1">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${stock.className}`}>
             {stock.label}
           </span>
           {showSeller && product.seller && (
             <span className="truncate text-xs text-stone-500">
-              {product.seller.businessName}
+              {product.seller.businessName} · {sellerKindLabel(product.seller.sellerKind)}
             </span>
           )}
         </div>

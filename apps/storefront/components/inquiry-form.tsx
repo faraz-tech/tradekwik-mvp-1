@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { createInquirySchema, type InquirySource } from "@tradekwik/shared";
 import { submitInquiry } from "@/lib/client-api";
+import { useBuyerAuth } from "@/components/buyer-auth";
 
 interface InquiryFormProps {
   sellerId: string;
@@ -31,6 +32,7 @@ export function InquiryForm({
   showQuantity = true,
 }: InquiryFormProps) {
   const router = useRouter();
+  const { user } = useBuyerAuth();
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -75,9 +77,14 @@ export function InquiryForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+    <form key={user?.id ?? "anon"} onSubmit={onSubmit} className="grid gap-4">
       {formError && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</p>
+      )}
+      {user && (
+        <p className="rounded-lg bg-blue-50 px-4 py-2 text-xs text-blue-800">
+          Sending as {user.name}. Replies and any order will show in your account.
+        </p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -85,7 +92,7 @@ export function InquiryForm({
           <label htmlFor="buyerName" className="mb-1 block text-sm font-medium text-stone-700">
             Your name *
           </label>
-          <input id="buyerName" name="buyerName" required className={inputClass} />
+          <input id="buyerName" name="buyerName" required defaultValue={user?.name ?? ""} className={inputClass} />
           <FieldError errors={fieldErrors.buyerName} />
         </div>
         <div>
@@ -99,6 +106,7 @@ export function InquiryForm({
             inputMode="numeric"
             placeholder="10-digit mobile"
             required
+            defaultValue={user?.phone ?? ""}
             className={inputClass}
           />
           <FieldError errors={fieldErrors.buyerPhone} />
@@ -107,7 +115,7 @@ export function InquiryForm({
           <label htmlFor="buyerCity" className="mb-1 block text-sm font-medium text-stone-700">
             City
           </label>
-          <input id="buyerCity" name="buyerCity" className={inputClass} />
+          <input id="buyerCity" name="buyerCity" defaultValue={user?.city ?? ""} className={inputClass} />
           <FieldError errors={fieldErrors.buyerCity} />
         </div>
         {showQuantity && (
@@ -132,10 +140,10 @@ export function InquiryForm({
         <legend className="mb-1 text-sm font-medium text-stone-700">Buying as</legend>
         <div className="flex gap-4">
           <label className="flex items-center gap-2 text-sm">
-            <input type="radio" name="buyerType" value="personal" defaultChecked /> Personal
+            <input type="radio" name="buyerType" value="personal" defaultChecked={user?.buyerType !== "business"} /> Personal
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input type="radio" name="buyerType" value="business" /> Business
+            <input type="radio" name="buyerType" value="business" defaultChecked={user?.buyerType === "business"} /> Business
           </label>
         </div>
       </fieldset>
@@ -163,7 +171,8 @@ export function InquiryForm({
         {submitting ? "Sending…" : "Send inquiry"}
       </button>
       <p className="text-xs text-stone-500">
-        The seller will contact you on your mobile number. No account needed.
+        The seller will contact you on your mobile number. No account needed
+        {user ? "." : " — but with a free account you can track replies and deliveries."}
       </p>
     </form>
   );

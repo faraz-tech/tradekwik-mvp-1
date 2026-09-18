@@ -35,10 +35,42 @@ export default function DashboardPage() {
   if (!data) return <p className="text-sm text-muted-foreground">Loading dashboard…</p>;
 
   const max = Math.max(1, ...data.inquiryTrend.map((d) => d.count));
+  const steps = [
+    { done: data.onboarding.storeSettings, label: "Complete store settings (description, address, logo)", href: "/store-settings" },
+    { done: data.onboarding.companyProfile, label: "Fill in your company profile", href: "/company-profile" },
+    { done: data.onboarding.firstProduct, label: "Publish your first product", href: "/products/new" },
+    { done: data.onboarding.documents, label: "Upload documents for verification", href: "/documents" },
+    { done: data.onboarding.isVerified, label: "Get the Verified seller badge", href: "/documents" },
+  ];
+  const remaining = steps.filter((s) => !s.done).length;
 
   return (
     <div className="grid gap-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
+
+      {remaining > 0 && (
+        <Card className="border-blue-200 bg-blue-50/40">
+          <CardHeader>
+            <CardTitle className="text-base">Set up your store — {steps.length - remaining} of {steps.length} done</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="grid gap-2 text-sm">
+              {steps.map((step) => (
+                <li key={step.label} className="flex items-center gap-2">
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${step.done ? "bg-green-600 text-white" : "border border-stone-400 text-stone-400"}`}>
+                    {step.done ? "✓" : ""}
+                  </span>
+                  {step.done ? (
+                    <span className="text-muted-foreground line-through">{step.label}</span>
+                  ) : (
+                    <Link href={step.href} className="font-medium text-blue-700 hover:underline">{step.label}</Link>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="New inquiries" value={data.newInquiries} href="/inquiries" />

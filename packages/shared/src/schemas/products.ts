@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LISTING_TYPES, STOCK_STATUSES } from "../constants.js";
+import { LISTING_TYPES, SELLER_KINDS, STOCK_STATUSES } from "../constants.js";
 import { sellerCardSchema } from "./sellers.js";
 
 export const productMediaItemSchema = z.object({
@@ -7,6 +7,13 @@ export const productMediaItemSchema = z.object({
   url: z.string(),
   alt: z.string().optional(),
 });
+
+/** One quantity break for wholesale pricing. */
+export const priceTierSchema = z.object({
+  minQty: z.coerce.number().int().min(1).max(10000000),
+  price: z.coerce.number().min(0).max(100000000),
+});
+export type PriceTierDto = z.infer<typeof priceTierSchema>;
 
 /** Public product DTO — GET /sellers/:slug/products[/:productSlug] */
 export const publicProductSchema = z.object({
@@ -20,6 +27,10 @@ export const publicProductSchema = z.object({
   priceRetail: z.number().nullable(),
   priceBulk: z.number().nullable(),
   minBulkQty: z.number().int().nullable(),
+  /** Extra quantity breaks beyond priceBulk/minBulkQty, sorted by minQty ascending. */
+  priceTiers: z.array(priceTierSchema),
+  /** True = sold only in wholesale quantities; retail ordering is hidden. */
+  wholesaleOnly: z.boolean(),
   priceOnRequest: z.boolean(),
   stockStatus: z.enum(STOCK_STATUSES),
   listingType: z.enum(LISTING_TYPES),
@@ -42,6 +53,7 @@ export type ProductWithSellerDto = z.infer<typeof productWithSellerSchema>;
 export const productSearchQuerySchema = z.object({
   category: z.string().trim().min(1).optional(),
   q: z.string().trim().min(1).max(100).optional(),
+  sellerKind: z.enum(SELLER_KINDS).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(12),
 });

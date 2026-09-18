@@ -5,6 +5,7 @@ import { z } from 'zod';
 import {
   productWithSellerSchema,
   publicProductSchema,
+  publicSellerAboutSchema,
   publicSellerSchema,
   storeProductsMetaSchema,
   storeProductsQuerySchema,
@@ -14,6 +15,7 @@ import { SellersService } from './sellers.service.js';
 class SellerProfileResponseDto extends createZodDto(
   z.object({ data: publicSellerSchema }),
 ) {}
+class SellerAboutResponseDto extends createZodDto(z.object({ data: publicSellerAboutSchema })) {}
 class StoreProductsQueryDto extends createZodDto(storeProductsQuerySchema) {}
 class SellerProductListResponseDto extends createZodDto(
   z.object({ data: z.array(publicProductSchema), meta: storeProductsMetaSchema }),
@@ -34,6 +36,15 @@ export class SellersController {
   @ApiNotFoundResponse({ description: 'Store not found or not active' })
   async getProfile(@Param('slug') slug: string): Promise<SellerProfileResponseDto> {
     return { data: await this.sellersService.getProfile(slug) };
+  }
+
+  @Get(':slug/about')
+  @ApiOperation({ summary: 'Company details, process, social links and owners (About page)' })
+  @ApiParam({ name: 'slug', example: 'shakti-embroidery-machines' })
+  @ApiOkResponse({ type: SellerAboutResponseDto })
+  @ApiNotFoundResponse({ description: 'Store not found or not active' })
+  async getAbout(@Param('slug') slug: string): Promise<SellerAboutResponseDto> {
+    return { data: await this.sellersService.getAbout(slug) };
   }
 
   @Get(':slug/products')

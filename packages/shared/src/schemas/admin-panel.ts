@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SELLER_STATUSES } from "../constants.js";
+import { SELLER_KINDS, SELLER_STATUSES } from "../constants.js";
 import { indianPhoneSchema } from "./common.js";
 import { sellerInquirySchema } from "./seller-panel.js";
 import { sellerProfileSchema } from "./seller-panel.js";
@@ -22,6 +22,7 @@ export const createSellerSchema = z.object({
     .max(200)
     .optional(),
   categoryId: z.uuid(),
+  sellerKind: z.enum(SELLER_KINDS).default("retailer"),
   description: z.string().trim().max(5000).optional(),
   city: z.string().trim().min(2).max(100),
   state: z.string().trim().min(2).max(100),
