@@ -4,13 +4,31 @@ import { notFound } from "next/navigation";
 import { getSeller, getSellerProducts, getSitemapData } from "@/lib/api";
 import { telLink, waLink } from "@/lib/format";
 import { absoluteUrl, jsonLdString, localBusinessJsonLd } from "@/lib/seo";
-import { ProductCard } from "@/components/product-card";
+import { LISTING_TYPES, STORE_SORTS, type ListingType, type StoreSort } from "@tradekwik/shared";
+import { StoreListings, type StoreListingsState } from "@/components/store-listings";
 import { InquiryForm } from "@/components/inquiry-form";
 
 export const revalidate = 300;
 
+interface StoreSearchParams {
+  type?: string;
+  q?: string;
+  sort?: string;
+  page?: string;
+}
+
 interface StorePageProps {
   params: Promise<{ sellerSlug: string }>;
+  searchParams: Promise<StoreSearchParams>;
+}
+
+/** Validate ?type=&q=&sort=&page= from the URL; unknown values fall back to defaults. */
+function parseListingState(raw: StoreSearchParams): StoreListingsState & { page: number } {
+  const type = LISTING_TYPES.find((t) => t === raw.type) as ListingType | undefined;
+  const sort = (STORE_SORTS.find((s) => s === raw.sort) as StoreSort | undefined) ?? "newest";
+  const q = raw.q?.trim().slice(0, 100) || undefined;
+  const page = Math.max(1, Math.floor(Number(raw.page)) || 1);
+  return { type, q, sort, page };
 }
 
 export async function generateStaticParams() {
@@ -41,13 +59,14 @@ export async function generateMetadata({ params }: StorePageProps): Promise<Meta
   };
 }
 
-export default async function StorePage({ params }: StorePageProps) {
-  const { sellerSlug } = await params;
-  const [seller, products] = await Promise.all([
+export default async function StorePage({ params, searchParams }: StorePageProps) {
+  const [{ sellerSlug }, rawSearch] = await Promise.all([params, searchParams]);
+  const { page, ...state } = parseListingState(rawSearch);
+  const [seller, results] = await Promise.all([
     getSeller(sellerSlug),
-    getSellerProducts(sellerSlug),
+    getSellerProducts(sellerSlug, { ...state, page }),
   ]);
-  if (!seller || !products) notFound();
+  if (!seller || !results) notFound();
 
   const storeUrl = absoluteUrl(`/store/${seller.slug}`);
   const waText = `Hi, I found ${seller.businessName} on TradeKwik and want to know more. ${storeUrl}`;
@@ -117,21 +136,8 @@ export default async function StorePage({ params }: StorePageProps) {
         </div>
       </section>
 
-      {/* Products */}
-      <section aria-labelledby="store-products" className="mt-10">
-        <h2 id="store-products" className="text-lg font-semibold text-stone-900">
-          Products ({products.length})
-        </h2>
-        {products.length === 0 ? (
-          <p className="mt-6 text-stone-500">No products listed yet.</p>
-        ) : (
-          <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} sellerSlug={seller.slug} />
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Catalogue with type tabs */}
+      <StoreListings sellerSlug={seller.slug} results={results} state={state} />
 
       {/* Store-level inquiry */}
       <section

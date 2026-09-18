@@ -17,6 +17,7 @@ import {
   BUYER_TYPES,
   INQUIRY_SOURCES,
   INQUIRY_STATUSES,
+  LISTING_TYPES,
   ORDER_REQUEST_STATUSES,
   ORDER_TYPES,
   SELLER_STATUSES,
@@ -31,6 +32,7 @@ import {
 export const sellerStatusEnum = pgEnum('seller_status', SELLER_STATUSES);
 export const sellerUserRoleEnum = pgEnum('seller_user_role', SELLER_USER_ROLES);
 export const stockStatusEnum = pgEnum('stock_status', STOCK_STATUSES);
+export const listingTypeEnum = pgEnum('listing_type', LISTING_TYPES);
 export const buyerTypeEnum = pgEnum('buyer_type', BUYER_TYPES);
 export const inquirySourceEnum = pgEnum('inquiry_source', INQUIRY_SOURCES);
 export const inquiryStatusEnum = pgEnum('inquiry_status', INQUIRY_STATUSES);
@@ -128,6 +130,7 @@ export const products = pgTable(
     minBulkQty: integer('min_bulk_qty'),
     priceOnRequest: boolean('price_on_request').notNull().default(false),
     stockStatus: stockStatusEnum('stock_status').notNull().default('in_stock'),
+    listingType: listingTypeEnum('listing_type').notNull().default('product'),
     media: jsonb('media').$type<ProductMediaItem[]>().notNull().default([]),
     isPublished: boolean('is_published').notNull().default(false),
     seoTitle: text('seo_title'),

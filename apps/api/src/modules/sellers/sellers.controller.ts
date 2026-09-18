@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
@@ -6,14 +6,17 @@ import {
   productWithSellerSchema,
   publicProductSchema,
   publicSellerSchema,
+  storeProductsMetaSchema,
+  storeProductsQuerySchema,
 } from '@tradekwik/shared';
 import { SellersService } from './sellers.service.js';
 
 class SellerProfileResponseDto extends createZodDto(
   z.object({ data: publicSellerSchema }),
 ) {}
+class StoreProductsQueryDto extends createZodDto(storeProductsQuerySchema) {}
 class SellerProductListResponseDto extends createZodDto(
-  z.object({ data: z.array(publicProductSchema) }),
+  z.object({ data: z.array(publicProductSchema), meta: storeProductsMetaSchema }),
 ) {}
 class ProductDetailResponseDto extends createZodDto(
   z.object({ data: productWithSellerSchema }),
@@ -34,11 +37,17 @@ export class SellersController {
   }
 
   @Get(':slug/products')
-  @ApiOperation({ summary: 'Published products of a store' })
+  @ApiOperation({
+    summary: 'Published products of a store (paginated; filter by listing type / text; sort)',
+  })
   @ApiParam({ name: 'slug', example: 'shakti-embroidery-machines' })
   @ApiOkResponse({ type: SellerProductListResponseDto })
-  async getProducts(@Param('slug') slug: string): Promise<SellerProductListResponseDto> {
-    return { data: await this.sellersService.getProducts(slug) };
+  async getProducts(
+    @Param('slug') slug: string,
+    @Query() query: StoreProductsQueryDto,
+  ): Promise<SellerProductListResponseDto> {
+    const { items, ...meta } = await this.sellersService.getProducts(slug, query);
+    return { data: items, meta };
   }
 
   @Get(':slug/products/:productSlug')

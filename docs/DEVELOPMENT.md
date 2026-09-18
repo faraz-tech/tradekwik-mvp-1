@@ -1,6 +1,6 @@
 # TradeKwik — Development Guide
 
-Everything you need to run, test, and work on this project. For a project overview see the [README](../README.md); for the product spec see [tradekwik-build-prompt-v2.md](../tradekwik-build-prompt-v2.md).
+Everything you need to run, test, and work on this project. For a project overview see the [README](../README.md); for the product spec see [tradekwik-build-prompt-v2.md](../tradekwik-build-prompt-v2.md). For what comes after the MVP see [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -99,7 +99,7 @@ Dev DB: local PostgreSQL (service `postgresql-x64-15`), database `tradekwik`, po
 ```bash
 pnpm --filter @tradekwik/api db:generate   # after editing schema.ts: diff → new migration .sql
 pnpm --filter @tradekwik/api db:migrate    # apply pending migrations to DATABASE_URL
-pnpm --filter @tradekwik/api db:seed       # WIPES all data, inserts 3 sellers / 12 products / logins
+pnpm --filter @tradekwik/api db:seed       # WIPES all data, inserts 3 sellers / 13 products / logins
 pnpm --filter @tradekwik/api db:studio     # Drizzle Studio — browse & edit rows in the browser
 ```
 

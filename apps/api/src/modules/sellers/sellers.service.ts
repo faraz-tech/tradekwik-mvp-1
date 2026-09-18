@@ -1,9 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type {
+  ListingType,
   ProductWithSellerDto,
   PublicProductDto,
   PublicSellerDto,
+  StoreProductsQuery,
 } from '@tradekwik/shared';
 import { DB } from '../../db/db.module.js';
 import type { Database } from '../../db/client.js';
@@ -13,6 +15,15 @@ import {
   toPublicSellerDto,
   toSellerCardDto,
 } from '../../common/mappers.js';
+
+export interface StoreProductsResult {
+  items: PublicProductDto[];
+  page: number;
+  pageSize: number;
+  total: number;
+  /** Published listings per type, ignoring the `type` filter (drives the tabs). */
+  counts: Partial<Record<ListingType, number>>;
+}
 
 @Injectable()
 export class SellersService {
@@ -35,14 +46,59 @@ export class SellersService {
     return toPublicSellerDto(await this.requireActiveSeller(slug));
   }
 
-  async getProducts(slug: string): Promise<PublicProductDto[]> {
+  /** Paginated, filterable catalogue of a store. */
+  async getProducts(slug: string, query: StoreProductsQuery): Promise<StoreProductsResult> {
     const seller = await this.requireActiveSeller(slug);
-    const rows = await this.db
-      .select()
-      .from(products)
-      .where(and(eq(products.sellerId, seller.id), eq(products.isPublished, true)))
-      .orderBy(desc(products.updatedAt));
-    return rows.map(toPublicProductDto);
+
+    const base: SQL[] = [eq(products.sellerId, seller.id), eq(products.isPublished, true)];
+    if (query.q) {
+      const pattern = `%${query.q}%`;
+      const textMatch = or(
+        ilike(products.name, pattern),
+        ilike(products.description, pattern),
+        sql`${products.specs}::text ILIKE ${pattern}`,
+      );
+      if (textMatch) base.push(textMatch);
+    }
+    const whereWithoutType = and(...base);
+    const where = query.type ? and(whereWithoutType, eq(products.listingType, query.type)) : whereWithoutType;
+
+    // Price sorts push "price on request" / unpriced items to the end.
+    const orderBy =
+      query.sort === 'price_asc'
+        ? [sql`${products.priceRetail} ASC NULLS LAST`, desc(products.updatedAt)]
+        : query.sort === 'price_desc'
+          ? [sql`${products.priceRetail} DESC NULLS LAST`, desc(products.updatedAt)]
+          : [desc(products.updatedAt), asc(products.name)];
+
+    const [rows, countRows] = await Promise.all([
+      this.db
+        .select()
+        .from(products)
+        .where(where)
+        .orderBy(...orderBy)
+        .limit(query.pageSize)
+        .offset((query.page - 1) * query.pageSize),
+      this.db
+        .select({ listingType: products.listingType, total: count() })
+        .from(products)
+        .where(whereWithoutType)
+        .groupBy(products.listingType),
+    ]);
+
+    const counts: Partial<Record<ListingType, number>> = {};
+    for (const row of countRows) counts[row.listingType] = row.total;
+    const total = query.type
+      ? (counts[query.type] ?? 0)
+      : countRows.reduce((sum, row) => sum + row.total, 0);
+
+    return {
+      items: rows.map(toPublicProductDto),
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+      counts,
+    };
   }
 
   async getProduct(slug: string, productSlug: string): Promise<ProductWithSellerDto> {

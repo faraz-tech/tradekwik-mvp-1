@@ -12,6 +12,17 @@ export type SellerUserRole = (typeof SELLER_USER_ROLES)[number];
 export const STOCK_STATUSES = ['in_stock', 'made_to_order', 'out_of_stock'] as const;
 export type StockStatus = (typeof STOCK_STATUSES)[number];
 
+/** What kind of listing a product row is — drives the tabs on a store page. */
+export const LISTING_TYPES = ['product', 'tool', 'accessory', 'service'] as const;
+export type ListingType = (typeof LISTING_TYPES)[number];
+
+export const LISTING_TYPE_LABELS: Record<ListingType, string> = {
+  product: 'Products',
+  tool: 'Tools',
+  accessory: 'Accessories',
+  service: 'Services',
+};
+
 export const BUYER_TYPES = ['personal', 'business'] as const;
 export type BuyerType = (typeof BUYER_TYPES)[number];
 

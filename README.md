@@ -4,6 +4,8 @@ Multi-vendor B2B + B2C commerce platform for Indian small/medium businesses. Sel
 
 **📖 Full command reference, testing guide, workflows & troubleshooting: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**
 
+**🗺️ Future development plan (trust, verification, buyer accounts, roles): [docs/ROADMAP.md](docs/ROADMAP.md)**
+
 ## Monorepo layout
 
 | App | Stack | Port | Purpose |

@@ -8,6 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import {
   createProductSchema,
+  LISTING_TYPES,
+  LISTING_TYPE_LABELS,
   STOCK_STATUSES,
   type CategoryDto,
   type ProductMediaItem,
@@ -34,6 +36,13 @@ const stockLabels: Record<(typeof STOCK_STATUSES)[number], string> = {
   out_of_stock: "Out of stock",
 };
 
+const listingTypeHints: Record<(typeof LISTING_TYPES)[number], string> = {
+  product: "Main items you sell (machines, goods, food)",
+  tool: "Tools and equipment used with your products",
+  accessory: "Spares, consumables and add-ons",
+  service: "Custom work, bookings, installation, repairs",
+};
+
 const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -54,6 +63,7 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(createProductSchema),
@@ -69,13 +79,23 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
           minBulkQty: product.minBulkQty ?? undefined,
           priceOnRequest: product.priceOnRequest,
           stockStatus: product.stockStatus,
+          listingType: product.listingType,
           media: product.media,
           isPublished: product.isPublished,
           seoTitle: product.seoTitle ?? undefined,
           seoDescription: product.seoDescription ?? undefined,
         }
-      : { specs: {}, media: [], priceOnRequest: false, isPublished: false, stockStatus: "in_stock" },
+      : {
+          specs: {},
+          media: [],
+          priceOnRequest: false,
+          isPublished: false,
+          stockStatus: "in_stock",
+          listingType: "product",
+        },
   });
+
+  const listingType = watch("listingType") ?? "product";
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => setCategories([]));
@@ -176,6 +196,19 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="listingType">Listing type</Label>
+            <select id="listingType" className={selectClass} {...register("listingType")}>
+              {LISTING_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {LISTING_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              {listingTypeHints[listingType]} — shown as a separate tab on your store page.
+            </p>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="description">Description</Label>

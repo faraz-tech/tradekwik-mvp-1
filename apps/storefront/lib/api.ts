@@ -6,6 +6,8 @@ import type {
   PublicProductDto,
   PublicSellerDto,
   SitemapDataDto,
+  StoreProductsMeta,
+  StoreProductsQuery,
 } from "@tradekwik/shared";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000/api/v1";
@@ -47,10 +49,31 @@ export function getSeller(slug: string): Promise<PublicSellerDto | null> {
   return apiGetOrNull<PublicSellerDto>(`/sellers/${encodeURIComponent(slug)}`);
 }
 
-export function getSellerProducts(slug: string): Promise<PublicProductDto[] | null> {
-  return apiGetOrNull<PublicProductDto[]>(
-    `/sellers/${encodeURIComponent(slug)}/products`,
-  );
+export interface StoreProductsResult extends StoreProductsMeta {
+  items: PublicProductDto[];
+}
+
+/** Paginated store catalogue (type / text filter, sort); null when the store is not found. */
+export async function getSellerProducts(
+  slug: string,
+  params: Partial<StoreProductsQuery> = {},
+): Promise<StoreProductsResult | null> {
+  const search = new URLSearchParams();
+  if (params.type) search.set("type", params.type);
+  if (params.q) search.set("q", params.q);
+  if (params.sort && params.sort !== "newest") search.set("sort", params.sort);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
+  if (params.pageSize) search.set("pageSize", String(params.pageSize));
+  const qs = search.toString();
+  const path = `/sellers/${encodeURIComponent(slug)}/products${qs ? `?${qs}` : ""}`;
+
+  const res = await fetch(`${API_URL}${path}`, { next: { revalidate: REVALIDATE } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new ApiRequestError(res.status, path);
+  const body = (await res.json()) as ApiResponse<PublicProductDto[]> & {
+    meta: StoreProductsMeta;
+  };
+  return { items: body.data, ...body.meta };
 }
 
 export function getProduct(

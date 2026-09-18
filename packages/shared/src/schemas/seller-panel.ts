@@ -5,6 +5,7 @@ import {
   ORDER_REQUEST_STATUSES,
   ORDER_TYPES,
   BUYER_TYPES,
+  LISTING_TYPES,
   STOCK_STATUSES,
 } from "../constants.js";
 import { indianPhoneSchema } from "./common.js";
@@ -36,6 +37,7 @@ export const createProductSchema = z.object({
   minBulkQty: z.coerce.number().int().min(1).max(1000000).optional(),
   priceOnRequest: z.boolean().default(false),
   stockStatus: z.enum(STOCK_STATUSES).default("in_stock"),
+  listingType: z.enum(LISTING_TYPES).default("product"),
   media: z.array(productMediaItemSchema).max(12).default([]),
   isPublished: z.boolean().default(false),
   seoTitle: z.string().trim().max(200).optional(),

@@ -116,6 +116,7 @@ export function toPublicProductDto(row: Product): PublicProductDto {
     minBulkQty: row.minBulkQty,
     priceOnRequest: row.priceOnRequest,
     stockStatus: row.stockStatus,
+    listingType: row.listingType,
     media: row.media,
     seoTitle: row.seoTitle,
     seoDescription: row.seoDescription,

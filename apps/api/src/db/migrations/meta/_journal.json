@@ -8,6 +8,13 @@
       "when": 1789671472390,
       "tag": "0000_sweet_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789740937636,
+      "tag": "0001_furry_zaran",
+      "breakpoints": true
     }
   ]
 }

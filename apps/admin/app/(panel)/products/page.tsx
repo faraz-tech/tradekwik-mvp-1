@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { SellerProductDto } from "@tradekwik/shared";
+import { LISTING_TYPE_LABELS, type SellerProductDto } from "@tradekwik/shared";
 import { deleteProduct, listProducts, updateProduct } from "@/lib/api";
 import { priceLabel, stockLabel } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,10 @@ export default function ProductsPage() {
         id: "price",
         header: "Price",
         cell: ({ row }) => priceLabel(row.original),
+      }),
+      columnHelper.accessor("listingType", {
+        header: "Type",
+        cell: (info) => <Badge variant="outline">{LISTING_TYPE_LABELS[info.getValue()]}</Badge>,
       }),
       columnHelper.accessor("stockStatus", {
         header: "Stock",

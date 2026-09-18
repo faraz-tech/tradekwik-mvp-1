@@ -243,7 +243,29 @@ async function seed() {
       priceBulk: 550,
       minBulkQty: 10,
       stockStatus: 'in_stock',
+      listingType: 'accessory',
       media: [img('Needle Set', 'Aari machine spare needle set')],
+      isPublished: true,
+    },
+
+    {
+      sellerId: embroiderySeller.id,
+      categoryId: embroideryCat.id,
+      slug: 'aari-embroidery-frame-adda-wooden',
+      name: 'Aari Embroidery Frame (Adda) — Wooden, Adjustable',
+      description:
+        'Seasoned teak wooden adda frame for hand aari and zardozi work. Adjustable width for sarees, dupattas and lehenga panels. Comes with clamps and tensioning rods.',
+      specs: {
+        Material: 'Seasoned teak',
+        'Width range': '90 cm to 180 cm',
+        Includes: 'Frame, 4 clamps, 2 tension rods',
+      },
+      priceRetail: 3200,
+      priceBulk: 2800,
+      minBulkQty: 5,
+      stockStatus: 'in_stock',
+      listingType: 'tool',
+      media: [img('Wooden Adda Frame', 'Adjustable wooden aari embroidery frame')],
       isPublished: true,
     },
 
@@ -284,6 +306,7 @@ async function seed() {
       },
       priceOnRequest: true,
       stockStatus: 'made_to_order',
+      listingType: 'service',
       media: [img('Event Counter', 'Ice cream counter at a wedding')],
       isPublished: true,
       seoTitle: 'Ice Cream Counter for Weddings & Events in Nagpur',
@@ -381,6 +404,7 @@ async function seed() {
       },
       priceOnRequest: true,
       stockStatus: 'made_to_order',
+      listingType: 'service',
       media: [img('3 Piece Suit', 'Custom stitched three piece suit')],
       isPublished: true,
     },
@@ -399,6 +423,7 @@ async function seed() {
       },
       priceOnRequest: true,
       stockStatus: 'made_to_order',
+      listingType: 'service',
       media: [img('Wedding Sherwani', 'Custom wedding sherwani')],
       isPublished: true,
     },
@@ -409,7 +434,7 @@ async function seed() {
     sellers: 3,
     sellerUsers: 3,
     platformAdmins: 1,
-    products: 12,
+    products: 13,
   };
   console.log('Seed complete:', counts);
   console.log('\nLogin credentials (dev only):');

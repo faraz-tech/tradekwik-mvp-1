@@ -1,0 +1,2 @@
+CREATE TYPE "public"."listing_type" AS ENUM('product', 'tool', 'accessory', 'service');--> statement-breakpoint
+ALTER TABLE "products" ADD COLUMN "listing_type" "listing_type" DEFAULT 'product' NOT NULL;

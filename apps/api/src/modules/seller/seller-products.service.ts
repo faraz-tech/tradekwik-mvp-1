@@ -51,6 +51,7 @@ export class SellerProductsService {
         minBulkQty: input.minBulkQty ?? null,
         priceOnRequest: input.priceOnRequest,
         stockStatus: input.stockStatus,
+        listingType: input.listingType,
         media: input.media,
         isPublished: input.isPublished,
         seoTitle: input.seoTitle ?? null,
