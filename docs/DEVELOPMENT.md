@@ -1,6 +1,6 @@
 # TradeKwik — Development Guide
 
-Everything you need to run, test, and work on this project. For a project overview see the [README](../README.md); for the product spec see [tradekwik-build-prompt-v2.md](../tradekwik-build-prompt-v2.md). For what comes after the MVP see [ROADMAP.md](ROADMAP.md). To put it live see [DEPLOYMENT.md](DEPLOYMENT.md).
+Everything you need to run, test, and work on this project. For a project overview see the [README](../README.md); for the product spec see [tradekwik-build-prompt-v2.md](../tradekwik-build-prompt-v2.md). For what comes after the MVP see [ROADMAP.md](ROADMAP.md). To put it live see [DEPLOYMENT.md](DEPLOYMENT.md). To test it by hand see [TEST-STORIES.md](TEST-STORIES.md).
 
 ---
 

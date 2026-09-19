@@ -19,8 +19,11 @@ export const publicSellerSchema = z.object({
   city: z.string(),
   state: z.string(),
   address: z.string().nullable(),
+  /** Masked (e.g. +9198765•••••) unless the caller is a logged-in buyer. */
   phone: z.string(),
   whatsappNumber: z.string(),
+  /** False when the numbers above are masked — the UI then asks the buyer to log in. */
+  contactRevealed: z.boolean(),
   email: z.string().nullable(),
   logoUrl: z.string().nullable(),
   coverImageUrl: z.string().nullable(),
@@ -45,10 +48,19 @@ export const sellerCardSchema = publicSellerSchema.pick({
   isVerified: true,
   whatsappNumber: true,
   phone: true,
+  contactRevealed: true,
   logoUrl: true,
 });
 
 export type SellerCardDto = z.infer<typeof sellerCardSchema>;
+
+/** GET /sellers/:slug/contact — real numbers, logged-in buyers only. */
+export const sellerContactSchema = z.object({
+  businessName: z.string(),
+  phone: z.string(),
+  whatsappNumber: z.string(),
+});
+export type SellerContactDto = z.infer<typeof sellerContactSchema>;
 
 // ---------- public seller directory ----------
 

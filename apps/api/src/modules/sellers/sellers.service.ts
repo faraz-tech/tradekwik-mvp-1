@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, gt, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type {
   ListingType,
+  SellerContactDto,
   PublicSellerAboutDto,
   SellerDirectoryMeta,
   SellerDirectoryQuery,
@@ -165,6 +166,16 @@ export class SellersService {
       if (PLAN_DEFINITIONS[g.plan].limits.featured) featured.add(g.sellerId);
     }
     return featured;
+  }
+
+  /** Real contact numbers — buyers only, never in a public/ISR-cached response. */
+  async getContact(slug: string): Promise<SellerContactDto> {
+    const seller = await this.requireActiveSeller(slug);
+    return {
+      businessName: seller.businessName,
+      phone: seller.phone,
+      whatsappNumber: seller.whatsappNumber,
+    };
   }
 
   /** Company details + people for the public About page. */

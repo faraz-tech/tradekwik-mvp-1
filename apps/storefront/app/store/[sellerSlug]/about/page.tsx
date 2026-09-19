@@ -9,10 +9,11 @@ import {
   type SocialPlatform,
 } from "@tradekwik/shared";
 import { getSellerAbout } from "@/lib/api";
-import { telLink, waLink, youtubeId } from "@/lib/format";
+import { waLink, youtubeId } from "@/lib/format";
 import { absoluteUrl } from "@/lib/seo";
 import { SellerKindBadge } from "@/components/seller-kind-badge";
 import { ShareButton } from "@/components/share-button";
+import { SellerContact } from "@/components/seller-contact";
 
 export const revalidate = 300;
 
@@ -120,12 +121,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
           <Link href={`/store/${seller.slug}#inquiry`} className="rounded-full bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">
             Send inquiry
           </Link>
-          <a href={waLink(seller.whatsappNumber, waText)} target="_blank" rel="noopener noreferrer" className="rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800">
-            WhatsApp seller
-          </a>
-          <a href={telLink(seller.phone)} className="rounded-full border border-stone-300 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 hover:bg-stone-50">
-            📞 Call now
-          </a>
+          <SellerContact sellerSlug={seller.slug} message={waText} />
           <ShareButton url={pageUrl} title={seller.businessName} text={`Check out ${seller.businessName} (${seller.city}) on TradeKwik.`} />
         </div>
       </header>

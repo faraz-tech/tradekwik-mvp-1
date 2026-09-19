@@ -298,6 +298,12 @@ No login needed; this is pure storefront work plus one small analytics endpoint.
 
 ---
 
+### 2.16 Seller contact protection — 🟢 done
+
+Seller phone and WhatsApp numbers are **masked in every public API response** (`+9198765•••••`) and never reach the page HTML, so bots and competitors cannot scrape them. Logged-in buyers fetch the real numbers from `GET /sellers/:slug/contact` (buyer role only); anonymous visitors see a single "Log in to call or WhatsApp" button that returns them to the page afterwards. The inquiry form stays open to guests, so the low-friction path is unchanged. Sellers, admins and buyers viewing their own orders always see real numbers. `telephone` was removed from the store JSON-LD for the same reason.
+
+---
+
 ### 2.15 Category browsing — 🟢 done
 
 Seed ships 19 starter categories (machines, home decoration, furniture, kitchen, handicrafts, textiles, packaging, hardware, electricals, industrial, building material, agriculture, food, beauty, jewellery, footwear, stationery). Homepage shows the first six with a "View all" link to `/categories`, which lists every category (with sub-categories) and links each to its product listing at `/category/<slug>`.

@@ -28,7 +28,7 @@ function toBuyerOrderDto(order: OrderRequest, seller: Seller): BuyerOrderDto {
   return {
     id: order.id,
     orderNumber: order.orderNumber,
-    seller: toSellerCardDto(seller),
+    seller: toSellerCardDto(seller, true),
     orderType: order.orderType,
     eventDate: order.eventDate,
     items: order.items,
@@ -133,7 +133,7 @@ export class BuyerService {
 
     return rows.map(({ inquiry, seller, productName, productSlug, orderId }) => ({
       id: inquiry.id,
-      seller: toSellerCardDto(seller),
+      seller: toSellerCardDto(seller, true),
       productId: inquiry.productId,
       productName,
       productSlug,

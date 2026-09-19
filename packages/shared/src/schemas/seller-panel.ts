@@ -167,6 +167,8 @@ export const sellerOrderRequestSchema = z.object({
   id: z.uuid(),
   orderNumber: z.string(),
   buyerId: z.uuid().nullable(),
+  /** Null for guest orders; set when the buyer has an account. */
+  buyerVerificationStatus: z.enum(BUYER_VERIFICATION_STATUSES).nullable(),
   inquiryId: z.uuid().nullable(),
   buyerName: z.string(),
   buyerPhone: z.string(),

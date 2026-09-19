@@ -48,7 +48,7 @@ export function localBusinessJsonLd(seller: PublicSellerDto, url: string) {
     description: seller.description ?? undefined,
     image: seller.logoUrl ?? undefined,
     url,
-    telephone: seller.phone,
+    // telephone is deliberately omitted: public seller numbers are masked
     address: {
       "@type": "PostalAddress",
       streetAddress: seller.address ?? undefined,

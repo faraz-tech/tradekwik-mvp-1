@@ -12,6 +12,7 @@ import {
 import { ApiFetchError, convertInquiry, listInquiries, updateInquiry } from "@/lib/api";
 import { formatDate, waReplyLink } from "@/lib/format";
 import { useCan } from "@/components/auth-context";
+import { BuyerBadge } from "@/components/buyer-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -209,6 +210,7 @@ export default function InquiriesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Buyer</TableHead>
+                <TableHead>Account</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Received</TableHead>
                 <TableHead>Status</TableHead>
@@ -218,16 +220,17 @@ export default function InquiriesPage() {
               {inquiries.map((inquiry) => (
                 <TableRow key={inquiry.id} className="cursor-pointer" onClick={() => openDetail(inquiry)}>
                   <TableCell>
-                    <p className="flex items-center gap-2 font-medium">
-                      {inquiry.buyerName}
-                      {inquiry.buyerVerificationStatus && inquiry.buyerVerificationStatus !== "unverified" && (
-                        <Badge variant="outline" className="text-[10px]">✓ {inquiry.buyerVerificationStatus.replace("_", " ")}</Badge>
-                      )}
-                    </p>
+                    <p className="font-medium">{inquiry.buyerName}</p>
                     <p className="text-xs text-muted-foreground">
                       {inquiry.buyerPhone}
                       {inquiry.buyerCity ? ` · ${inquiry.buyerCity}` : ""}
                     </p>
+                  </TableCell>
+                  <TableCell>
+                    <BuyerBadge
+                      buyerId={inquiry.buyerId}
+                      verificationStatus={inquiry.buyerVerificationStatus}
+                    />
                   </TableCell>
                   <TableCell className="max-w-48 truncate">
                     {inquiry.productName ?? <span className="text-muted-foreground">Store inquiry</span>}
@@ -251,7 +254,13 @@ export default function InquiriesPage() {
           {selected && (
             <>
               <SheetHeader>
-                <SheetTitle>{selected.buyerName}</SheetTitle>
+                <SheetTitle className="flex flex-wrap items-center gap-2">
+                  {selected.buyerName}
+                  <BuyerBadge
+                    buyerId={selected.buyerId}
+                    verificationStatus={selected.buyerVerificationStatus}
+                  />
+                </SheetTitle>
                 <SheetDescription>
                   {selected.buyerType === "business" ? "Business buyer" : "Personal buyer"}
                   {selected.buyerCity ? ` · ${selected.buyerCity}` : ""} · {formatDate(selected.createdAt)}
@@ -272,9 +281,14 @@ export default function InquiriesPage() {
                   )}
                   <p><span className="text-muted-foreground">Source:</span> {selected.source}</p>
                   {selected.buyerId ? (
-                    <p className="text-xs text-green-700">Registered TradeKwik buyer — order updates reach their dashboard.</p>
+                    <p className="text-xs text-green-700">
+                      Registered buyer — their mobile number was verified by OTP, and order updates reach their dashboard.
+                    </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Guest inquiry (no account yet).</p>
+                    <p className="text-xs text-amber-700">
+                      Guest inquiry — no account, so this mobile number has <strong>not</strong> been verified. Confirm it
+                      before spending time on the lead.
+                    </p>
                   )}
                 </div>
 

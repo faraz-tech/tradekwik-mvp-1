@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
@@ -9,10 +9,14 @@ import {
   publicSellerSchema,
   sellerDirectoryMetaSchema,
   sellerDirectoryQuerySchema,
+  sellerContactSchema,
   sellerListItemSchema,
   storeProductsMetaSchema,
   storeProductsQuerySchema,
 } from '@tradekwik/shared';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../common/guards/roles.guard.js';
+import { Roles } from '../../common/decorators/roles.decorator.js';
 import { SellersService } from './sellers.service.js';
 
 class SellerProfileResponseDto extends createZodDto(
@@ -20,6 +24,7 @@ class SellerProfileResponseDto extends createZodDto(
 ) {}
 class SellerAboutResponseDto extends createZodDto(z.object({ data: publicSellerAboutSchema })) {}
 class SellerDirectoryQueryDto extends createZodDto(sellerDirectoryQuerySchema) {}
+class SellerContactResponseDto extends createZodDto(z.object({ data: sellerContactSchema })) {}
 class SellerDirectoryResponseDto extends createZodDto(
   z.object({ data: z.array(sellerListItemSchema), meta: sellerDirectoryMetaSchema }),
 ) {}
@@ -51,6 +56,15 @@ export class SellersController {
   @ApiNotFoundResponse({ description: 'Store not found or not active' })
   async getProfile(@Param('slug') slug: string): Promise<SellerProfileResponseDto> {
     return { data: await this.sellersService.getProfile(slug) };
+  }
+
+  @Get(':slug/contact')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('buyer')
+  @ApiOperation({ summary: 'Seller phone + WhatsApp — logged-in buyers only (public responses are masked)' })
+  @ApiOkResponse({ type: SellerContactResponseDto })
+  async getContact(@Param('slug') slug: string): Promise<SellerContactResponseDto> {
+    return { data: await this.sellersService.getContact(slug) };
   }
 
   @Get(':slug/about')

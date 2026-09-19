@@ -23,6 +23,7 @@ import {
   waReplyLink,
 } from "@/lib/format";
 import { useCan } from "@/components/auth-context";
+import { BuyerBadge } from "@/components/buyer-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -250,7 +251,11 @@ function OrderDetail({
         <p>
           <span className="text-muted-foreground">Phone:</span>{" "}
           <a href={`tel:${order.buyerPhone}`} className="font-medium underline">{order.buyerPhone}</a>
-          {order.buyerId && <Badge variant="outline" className="ml-2">Registered buyer</Badge>}
+          <BuyerBadge
+            buyerId={order.buyerId}
+            verificationStatus={order.buyerVerificationStatus}
+            className="ml-2"
+          />
         </p>
         <p><span className="text-muted-foreground">Deliver to:</span> {order.deliveryAddress}</p>
         {order.transportPreference && (
@@ -451,6 +456,7 @@ export default function OrdersPage() {
               <TableRow>
                 <TableHead>Order</TableHead>
                 <TableHead>Buyer</TableHead>
+                <TableHead>Account</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Received</TableHead>
@@ -464,6 +470,12 @@ export default function OrdersPage() {
                   <TableCell>
                     <p className="font-medium">{order.buyerName}</p>
                     <p className="text-xs text-muted-foreground">{order.buyerPhone}</p>
+                  </TableCell>
+                  <TableCell>
+                    <BuyerBadge
+                      buyerId={order.buyerId}
+                      verificationStatus={order.buyerVerificationStatus}
+                    />
                   </TableCell>
                   <TableCell className="capitalize">
                     {order.orderType}

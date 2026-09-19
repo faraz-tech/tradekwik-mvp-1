@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategories, getProduct, getSitemapData } from "@/lib/api";
-import { minOrderQty, priceLine, stockLabels, telLink, waLink } from "@/lib/format";
+import { minOrderQty, priceLine, stockLabels } from "@/lib/format";
 import { absoluteUrl, jsonLdString, productJsonLd } from "@/lib/seo";
 import { MediaGallery } from "@/components/media-gallery";
 import { InquiryForm } from "@/components/inquiry-form";
@@ -10,6 +10,7 @@ import { OrderForm } from "@/components/order-form";
 import { PriceTiers } from "@/components/price-tiers";
 import { SellerKindBadge } from "@/components/seller-kind-badge";
 import { ShareButton } from "@/components/share-button";
+import { SellerContact } from "@/components/seller-contact";
 
 /** Categories whose products can be ordered/booked directly (not just inquired). */
 const ORDERABLE_CATEGORY_SLUGS = new Set(["ice-cream-desserts", "garments-tailoring"]);
@@ -68,7 +69,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const pageUrl = absoluteUrl(`/store/${sellerSlug}/${productSlug}`);
   const stock = stockLabels[product.stockStatus];
   const waText = `Hi, I'm interested in "${product.name}" listed on TradeKwik. ${pageUrl}`;
-  const waHref = waLink(seller.whatsappNumber, waText);
   const specEntries = Object.entries(product.specs);
   const categorySlug = categories.find((c) => c.id === product.categoryId)?.slug;
   const orderable = categorySlug ? ORDERABLE_CATEGORY_SLUGS.has(categorySlug) : false;
@@ -127,20 +127,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 Order / Book
               </a>
             )}
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full bg-green-700 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-green-800"
-            >
-              WhatsApp
-            </a>
-            <a
-              href={telLink(seller.phone)}
-              className="rounded-full border border-stone-300 bg-white px-6 py-3 text-center text-sm font-semibold text-stone-800 hover:bg-stone-50"
-            >
-              📞 Call
-            </a>
+            <SellerContact sellerSlug={seller.slug} message={waText} size="md" />
             <ShareButton url={pageUrl} title={product.name} text={shareText} />
           </div>
 
@@ -213,7 +200,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
             sellerId={product.sellerId}
             productId={product.id}
             source="product_page"
-            whatsappHref={waHref}
           />
         </section>
 
@@ -231,7 +217,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
               sellerId={product.sellerId}
               productId={product.id}
               productName={product.name}
-              whatsappHref={waHref}
               wholesaleOnly={product.wholesaleOnly}
               minQty={minQty ?? undefined}
             />

@@ -16,6 +16,7 @@ import type {
   CreateOrderRequestInput,
   CreatedResourceDto,
   LoginResponseDto,
+  SellerContactDto,
   SendOtpInput,
   SendOtpResponseDto,
   UpdateBuyerProfileInput,
@@ -89,6 +90,10 @@ export function submitInquiry(input: CreateInquiryInput): Promise<SubmitResult> 
 export function submitOrderRequest(input: CreateOrderRequestInput): Promise<SubmitResult> {
   return post("/order-requests", input);
 }
+
+/** Real seller phone + WhatsApp. Buyers only; public responses are masked. */
+export const getSellerContact = (slug: string) =>
+  request<SellerContactDto>(`/sellers/${encodeURIComponent(slug)}/contact`);
 
 // ---- OTP ----
 

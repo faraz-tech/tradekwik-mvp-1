@@ -8,6 +8,8 @@ Multi-vendor B2B + B2C commerce platform for Indian small/medium businesses. Sel
 
 **🚀 Production deployment (servers, env secrets, DNS, TLS, checklists): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
 
+**🧪 Manual test stories with example payloads for every operation: [docs/TEST-STORIES.md](docs/TEST-STORIES.md)**
+
 ## Monorepo layout
 
 | App | Stack | Port | Purpose |

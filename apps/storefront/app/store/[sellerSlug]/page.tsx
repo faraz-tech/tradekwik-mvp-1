@@ -3,13 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSeller, getSellerProducts, getSitemapData } from "@/lib/api";
-import { telLink, waLink } from "@/lib/format";
+import { waLink } from "@/lib/format";
 import { absoluteUrl, jsonLdString, localBusinessJsonLd } from "@/lib/seo";
 import { LISTING_TYPES, STORE_SORTS, type ListingType, type StoreSort } from "@tradekwik/shared";
 import { StoreListings, type StoreListingsState } from "@/components/store-listings";
 import { InquiryForm } from "@/components/inquiry-form";
 import { SellerKindBadge } from "@/components/seller-kind-badge";
 import { ShareButton } from "@/components/share-button";
+import { SellerContact } from "@/components/seller-contact";
 
 export const revalidate = 300;
 
@@ -132,20 +133,7 @@ export default async function StorePage({ params, searchParams }: StorePageProps
           >
             Send inquiry
           </a>
-          <a
-            href={waLink(seller.whatsappNumber, waText)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800"
-          >
-            WhatsApp seller
-          </a>
-          <a
-            href={telLink(seller.phone)}
-            className="rounded-full border border-stone-300 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 hover:bg-stone-50"
-          >
-            📞 Call now
-          </a>
+          <SellerContact sellerSlug={seller.slug} message={waText} />
           <ShareButton
             url={storeUrl}
             title={seller.businessName}
@@ -171,7 +159,6 @@ export default async function StorePage({ params, searchParams }: StorePageProps
         <InquiryForm
           sellerId={seller.id}
           source="store_page"
-          whatsappHref={waLink(seller.whatsappNumber, waText)}
           showQuantity={false}
         />
       </section>

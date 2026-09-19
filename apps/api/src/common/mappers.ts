@@ -47,7 +47,7 @@ export function toCategoryDto(row: Category): CategoryDto {
   };
 }
 
-export function toPublicSellerDto(row: Seller): PublicSellerDto {
+export function toPublicSellerDto(row: Seller, revealContact = false): PublicSellerDto {
   return {
     id: row.id,
     slug: row.slug,
@@ -58,8 +58,9 @@ export function toPublicSellerDto(row: Seller): PublicSellerDto {
     city: row.city,
     state: row.state,
     address: row.address,
-    phone: row.phone,
-    whatsappNumber: row.whatsappNumber,
+    phone: revealContact ? row.phone : maskPhone(row.phone),
+    whatsappNumber: revealContact ? row.whatsappNumber : maskPhone(row.whatsappNumber),
+    contactRevealed: revealContact,
     email: row.email,
     logoUrl: row.logoUrl,
     coverImageUrl: row.coverImageUrl,
@@ -73,7 +74,7 @@ export function toPublicSellerDto(row: Seller): PublicSellerDto {
   };
 }
 
-export function toSellerCardDto(row: Seller): SellerCardDto {
+export function toSellerCardDto(row: Seller, revealContact = false): SellerCardDto {
   return {
     slug: row.slug,
     businessName: row.businessName,
@@ -81,14 +82,27 @@ export function toSellerCardDto(row: Seller): SellerCardDto {
     city: row.city,
     state: row.state,
     isVerified: row.isVerified,
-    whatsappNumber: row.whatsappNumber,
-    phone: row.phone,
+    whatsappNumber: revealContact ? row.whatsappNumber : maskPhone(row.whatsappNumber),
+    phone: revealContact ? row.phone : maskPhone(row.phone),
+    contactRevealed: revealContact,
     logoUrl: row.logoUrl,
   };
 }
 
+/** The seller's own profile and the admin view always show the real numbers. */
 export function toSellerProfileDto(row: Seller): SellerProfileDto {
-  return { ...toPublicSellerDto(row), gstNumber: row.gstNumber };
+  return { ...toPublicSellerDto(row, true), gstNumber: row.gstNumber };
+}
+
+/**
+ * +919876500001 → +9198765•••••  — enough to look real, useless for cold-calling.
+ * Seller numbers are only revealed to logged-in buyers (GET /sellers/:slug/contact),
+ * which keeps them out of the public HTML and away from scrapers.
+ */
+export function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '').slice(-10);
+  if (digits.length < 10) return '•••••';
+  return `+91${digits.slice(0, 5)}•••••`;
 }
 
 /** GSTIN 24ABCDE1234F1Z5 → 24ABCDE****F1Z5 (hides the PAN digits). */
@@ -212,11 +226,15 @@ export function toSellerInquiryDto(
   };
 }
 
-export function toSellerOrderRequestDto(row: OrderRequest): SellerOrderRequestDto {
+export function toSellerOrderRequestDto(
+  row: OrderRequest,
+  buyerVerificationStatus: SellerOrderRequestDto['buyerVerificationStatus'] = null,
+): SellerOrderRequestDto {
   return {
     id: row.id,
     orderNumber: row.orderNumber,
     buyerId: row.buyerId,
+    buyerVerificationStatus,
     inquiryId: row.inquiryId,
     buyerName: row.buyerName,
     buyerPhone: row.buyerPhone,

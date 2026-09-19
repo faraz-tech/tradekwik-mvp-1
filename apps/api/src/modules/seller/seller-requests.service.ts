@@ -157,20 +157,35 @@ export class SellerRequestsService {
       ? and(eq(orderRequests.sellerId, sellerId), eq(orderRequests.status, status))
       : eq(orderRequests.sellerId, sellerId);
     const rows = await this.db
-      .select()
+      .select({ order: orderRequests, buyerVerification: buyers.verificationStatus })
       .from(orderRequests)
+      .leftJoin(buyers, eq(orderRequests.buyerId, buyers.id))
       .where(where)
       .orderBy(desc(orderRequests.createdAt));
-    return rows.map(toSellerOrderRequestDto);
+    return rows.map(({ order, buyerVerification }) => toSellerOrderRequestDto(order, buyerVerification));
   }
 
   async orderDetail(sellerId: string, orderId: string): Promise<SellerOrderDetailDto> {
     const order = await this.requireSellerOrder(sellerId, orderId);
-    const [events, shipment] = await Promise.all([
+    const [events, shipment, verification] = await Promise.all([
       this.lifecycle.listEvents(orderId, false),
       this.lifecycle.getShipment(orderId),
+      this.buyerVerification(order.buyerId),
     ]);
-    return { ...toSellerOrderRequestDto(order), events, shipment };
+    return { ...toSellerOrderRequestDto(order, verification), events, shipment };
+  }
+
+  /** Verification level of the account behind an order, or null for a guest order. */
+  private async buyerVerification(
+    buyerId: string | null,
+  ): Promise<SellerOrderRequestDto['buyerVerificationStatus']> {
+    if (!buyerId) return null;
+    const [row] = await this.db
+      .select({ status: buyers.verificationStatus })
+      .from(buyers)
+      .where(eq(buyers.id, buyerId))
+      .limit(1);
+    return row?.status ?? null;
   }
 
   async updateOrder(

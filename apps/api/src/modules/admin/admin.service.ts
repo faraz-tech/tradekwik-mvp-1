@@ -44,6 +44,13 @@ export class AdminService {
     private readonly billing: BillingService,
   ) {}
 
+  /** Re-read a seller row; startTrialIfNeeded() writes to the DB, so the in-memory copy is stale. */
+  private async reload(sellerId: string): Promise<Seller> {
+    const [row] = await this.db.select().from(sellers).where(eq(sellers.id, sellerId)).limit(1);
+    if (!row) throw new NotFoundException('Seller not found.');
+    return row;
+  }
+
   private async subscriptionSummary(seller: Seller) {
     const eff = await this.billing.effectiveFor(seller);
     return {
@@ -137,13 +144,17 @@ export class AdminService {
       return seller;
     });
 
-    if (created.status === 'active') await this.billing.startTrialIfNeeded(created.id);
+    let seller = created;
+    if (seller.status === 'active') {
+      await this.billing.startTrialIfNeeded(seller.id);
+      seller = await this.reload(seller.id);
+    }
     return {
-      ...toSellerProfileDto(created),
+      ...toSellerProfileDto(seller),
       ownerName: input.owner.name,
       ownerPhone,
       productCount: 0,
-      subscription: await this.subscriptionSummary(created),
+      subscription: await this.subscriptionSummary(seller),
     };
   }
 
@@ -154,7 +165,10 @@ export class AdminService {
       .where(eq(sellers.id, id))
       .returning();
     if (!updated) throw new NotFoundException('Seller not found.');
-    if (updated.status === 'active') await this.billing.startTrialIfNeeded(updated.id);
+    if (updated.status === 'active') {
+      await this.billing.startTrialIfNeeded(updated.id);
+      return this.withOwner(await this.reload(updated.id));
+    }
     return this.withOwner(updated);
   }
 
