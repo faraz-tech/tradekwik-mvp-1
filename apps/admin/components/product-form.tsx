@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CategorySuggest } from "@/components/category-suggest";
 
 type FormInput = z.input<typeof createProductSchema>;
 type FormOutput = z.output<typeof createProductSchema>;
@@ -200,6 +201,7 @@ export function ProductForm({ product }: { product?: SellerProductDto }) {
                 ))}
               </select>
               {fieldError("categoryId")}
+              <CategorySuggest />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="stockStatus">Stock status</Label>

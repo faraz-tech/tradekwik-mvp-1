@@ -7,6 +7,9 @@ import {
   publicProductSchema,
   publicSellerAboutSchema,
   publicSellerSchema,
+  sellerDirectoryMetaSchema,
+  sellerDirectoryQuerySchema,
+  sellerListItemSchema,
   storeProductsMetaSchema,
   storeProductsQuerySchema,
 } from '@tradekwik/shared';
@@ -16,6 +19,10 @@ class SellerProfileResponseDto extends createZodDto(
   z.object({ data: publicSellerSchema }),
 ) {}
 class SellerAboutResponseDto extends createZodDto(z.object({ data: publicSellerAboutSchema })) {}
+class SellerDirectoryQueryDto extends createZodDto(sellerDirectoryQuerySchema) {}
+class SellerDirectoryResponseDto extends createZodDto(
+  z.object({ data: z.array(sellerListItemSchema), meta: sellerDirectoryMetaSchema }),
+) {}
 class StoreProductsQueryDto extends createZodDto(storeProductsQuerySchema) {}
 class SellerProductListResponseDto extends createZodDto(
   z.object({ data: z.array(publicProductSchema), meta: storeProductsMetaSchema }),
@@ -28,6 +35,14 @@ class ProductDetailResponseDto extends createZodDto(
 @Controller('sellers')
 export class SellersController {
   constructor(private readonly sellersService: SellersService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Seller directory — filter by text, kind, category, state; featured first' })
+  @ApiOkResponse({ type: SellerDirectoryResponseDto })
+  async directory(@Query() query: SellerDirectoryQueryDto): Promise<SellerDirectoryResponseDto> {
+    const { items, meta } = await this.sellersService.directory(query);
+    return { data: items, meta };
+  }
 
   @Get(':slug')
   @ApiOperation({ summary: 'Public store profile' })

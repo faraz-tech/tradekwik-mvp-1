@@ -43,6 +43,7 @@ export function toCategoryDto(row: Category): CategoryDto {
     name: row.name,
     slug: row.slug,
     parentId: row.parentId,
+    sortOrder: row.sortOrder,
   };
 }
 

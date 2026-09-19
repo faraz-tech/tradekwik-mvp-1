@@ -21,6 +21,7 @@ import {
   type Seller,
 } from '../../db/schema.js';
 import { toSellerInquiryDto, toSellerProfileDto } from '../../common/mappers.js';
+import { BillingService } from '../billing/billing.service.js';
 
 function slugify(name: string): string {
   return (
@@ -38,7 +39,19 @@ function normalizePhone(phone: string): string {
 
 @Injectable()
 export class AdminService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DB) private readonly db: Database,
+    private readonly billing: BillingService,
+  ) {}
+
+  private async subscriptionSummary(seller: Seller) {
+    const eff = await this.billing.effectiveFor(seller);
+    return {
+      state: eff.state,
+      effectivePlan: eff.effectivePlan,
+      currentPeriodEndsAt: eff.currentPeriodEndsAt ? eff.currentPeriodEndsAt.toISOString() : null,
+    };
+  }
 
   async listSellers(status?: SellerStatus): Promise<AdminSellerDto[]> {
     const rows = await this.db
@@ -58,12 +71,15 @@ export class AdminService {
       .where(status ? eq(sellers.status, status) : undefined)
       .orderBy(desc(sellers.createdAt));
 
-    return rows.map(({ seller, ownerName, ownerPhone, productCount }) => ({
-      ...toSellerProfileDto(seller),
-      ownerName,
-      ownerPhone,
-      productCount,
-    }));
+    return Promise.all(
+      rows.map(async ({ seller, ownerName, ownerPhone, productCount }) => ({
+        ...toSellerProfileDto(seller),
+        ownerName,
+        ownerPhone,
+        productCount,
+        subscription: await this.subscriptionSummary(seller),
+      })),
+    );
   }
 
   async createSeller(input: CreateSellerInput): Promise<AdminSellerDto> {
@@ -121,11 +137,13 @@ export class AdminService {
       return seller;
     });
 
+    if (created.status === 'active') await this.billing.startTrialIfNeeded(created.id);
     return {
       ...toSellerProfileDto(created),
       ownerName: input.owner.name,
       ownerPhone,
       productCount: 0,
+      subscription: await this.subscriptionSummary(created),
     };
   }
 
@@ -136,6 +154,7 @@ export class AdminService {
       .where(eq(sellers.id, id))
       .returning();
     if (!updated) throw new NotFoundException('Seller not found.');
+    if (updated.status === 'active') await this.billing.startTrialIfNeeded(updated.id);
     return this.withOwner(updated);
   }
 
@@ -207,6 +226,7 @@ export class AdminService {
       ownerName: owner?.name ?? null,
       ownerPhone: owner?.phone ?? null,
       productCount: prodCount.value,
+      subscription: await this.subscriptionSummary(seller),
     };
   }
 

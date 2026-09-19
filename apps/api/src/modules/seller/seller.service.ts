@@ -38,10 +38,14 @@ import {
   toTeamMemberDto,
 } from '../../common/mappers.js';
 import { normalizePhone } from '../auth/auth.service.js';
+import { BillingService } from '../billing/billing.service.js';
 
 @Injectable()
 export class SellerService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DB) private readonly db: Database,
+    private readonly billing: BillingService,
+  ) {}
 
   /** Dates are bucketed in IST on both sides so the trend is timezone-safe. */
   private static readonly IST_DAY = new Intl.DateTimeFormat('en-CA', {
@@ -238,6 +242,7 @@ export class SellerService {
   }
 
   async createTeamMember(sellerId: string, input: CreateTeamMemberInput): Promise<SellerTeamMemberDto> {
+    await this.billing.assertCanAddTeamMember(sellerId);
     const phone = normalizePhone(input.phone);
     const [taken] = await this.db
       .select({ id: sellerUsers.id })

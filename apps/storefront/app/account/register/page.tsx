@@ -7,6 +7,7 @@ import { z } from "zod";
 import { buyerRegisterSchema } from "@tradekwik/shared";
 import { buyerRegister, ClientApiError } from "@/lib/client-api";
 import { useBuyerAuth } from "@/components/buyer-auth";
+import { PhoneVerify } from "@/components/phone-verify";
 
 const inputClass =
   "w-full rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-blue-500";
@@ -35,6 +36,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const { refresh } = useBuyerAuth();
   const [buyerType, setBuyerType] = useState<"personal" | "business">("personal");
+  const [phone, setPhone] = useState("");
+  const [otpToken, setOtpToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState(false);
@@ -47,8 +50,9 @@ export default function RegisterPage() {
     const str = (k: string) => String(f.get(k) ?? "").trim() || undefined;
     const parsed = buyerRegisterSchema.safeParse({
       fullName: str("fullName"),
-      phone: str("phone"),
+      phone: phone.trim(),
       email: str("email"),
+      otpToken: otpToken ?? "",
       password: String(f.get("password") ?? ""),
       buyerType,
       companyName: str("companyName"),
@@ -100,9 +104,20 @@ export default function RegisterPage() {
             <input id="companyName" name="companyName" className={inputClass} />
           </Field>
         )}
-        <Field id="phone" label="Mobile number *" errors={fieldErrors.phone}>
-          <input id="phone" name="phone" type="tel" inputMode="numeric" required className={inputClass} placeholder="10-digit mobile" />
+        <Field id="phone" label="Mobile number *" errors={fieldErrors.phone ?? fieldErrors.otpToken}>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="numeric"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className={inputClass}
+            placeholder="10-digit mobile"
+          />
         </Field>
+        <PhoneVerify phone={phone} purpose="buyer_register" onVerified={setOtpToken} />
         <Field id="email" label="Email" errors={fieldErrors.email}>
           <input id="email" name="email" type="email" className={inputClass} />
         </Field>
@@ -118,8 +133,8 @@ export default function RegisterPage() {
           <input id="password" name="password" type="password" required minLength={6} className={inputClass} />
         </Field>
 
-        <button type="submit" disabled={busy} className="rounded-full bg-blue-700 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
-          {busy ? "Creating account…" : "Create account"}
+        <button type="submit" disabled={busy || !otpToken} className="rounded-full bg-blue-700 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
+          {busy ? "Creating account…" : otpToken ? "Create account" : "Verify your mobile number to continue"}
         </button>
       </form>
       <p className="mt-5 text-sm text-stone-600">

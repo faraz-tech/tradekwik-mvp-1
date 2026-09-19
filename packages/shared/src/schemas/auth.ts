@@ -34,6 +34,8 @@ export const sellerRegisterSchema = z.object({
   ownerName: z.string().trim().min(2, "Enter your name").max(100),
   loginPhone: indianPhoneSchema,
   password: passwordSchema,
+  /** From POST /auth/otp/verify for `loginPhone`. */
+  otpToken: z.string().min(10, "Please verify your mobile number first"),
 });
 export type SellerRegisterInput = z.infer<typeof sellerRegisterSchema>;
 
@@ -49,6 +51,8 @@ export type SellerRegisterResponseDto = z.infer<typeof sellerRegisterResponseSch
 export const adminLoginSchema = z.object({
   email: z.email("Enter a valid email"),
   password: passwordSchema,
+  /** One-time / rotating code kept in the `admin_access_codes` table. */
+  accessCode: z.string().trim().min(4, "Enter the access code").max(100),
 });
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 
@@ -62,6 +66,8 @@ export const buyerRegisterSchema = z.object({
   companyName: z.string().trim().max(200).optional(),
   city: z.string().trim().max(100).optional(),
   state: z.string().trim().max(100).optional(),
+  /** From POST /auth/otp/verify for `phone`. */
+  otpToken: z.string().min(10, "Please verify your mobile number first"),
 });
 export type BuyerRegisterInput = z.infer<typeof buyerRegisterSchema>;
 
@@ -81,6 +87,8 @@ export const authUserSchema = z.discriminatedUnion("role", [
     phone: z.string(),
     sellerId: z.uuid(),
     businessName: z.string(),
+    /** Public store slug — used to link the seller to their live storefront. */
+    sellerSlug: z.string(),
     sellerUserRole: z.enum(SELLER_USER_ROLES),
     permissions: z.array(z.enum(SELLER_PERMISSIONS)),
   }),

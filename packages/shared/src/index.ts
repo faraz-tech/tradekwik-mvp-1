@@ -9,5 +9,7 @@ export * from "./schemas/seller-panel.js";
 export * from "./schemas/admin-panel.js";
 export * from "./schemas/buyer.js";
 export * from "./schemas/verification.js";
+export * from "./schemas/otp.js";
+export * from "./schemas/billing.js";
 export * from "./permissions.js";
 export * from "./constants.js";

@@ -2,11 +2,12 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, or, gt } from 'drizzle-orm';
 import {
   ADMIN_ROLE_PERMISSIONS,
   SELLER_ROLE_PERMISSIONS,
@@ -22,6 +23,8 @@ import {
 import { DB } from '../../db/db.module.js';
 import type { Database } from '../../db/client.js';
 import {
+  adminAccessCodes,
+  adminAllowedIps,
   buyers,
   categories,
   inquiries,
@@ -36,6 +39,7 @@ import {
 } from '../../db/schema.js';
 import type { JwtPayload } from './jwt-payload.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { OtpService } from '../otp/otp.service.js';
 
 const BAD_CREDENTIALS = 'Incorrect phone/email or password.';
 
@@ -59,12 +63,14 @@ export class AuthService {
     @Inject(DB) private readonly db: Database,
     private readonly jwtService: JwtService,
     private readonly notifications: NotificationsService,
+    private readonly otp: OtpService,
   ) {}
 
   // ---------- seller ----------
 
   /** Public sign-up: creates a pending store + its owner login. An admin approves it later. */
   async registerSeller(input: SellerRegisterInput): Promise<SellerRegisterResponseDto> {
+    this.otp.assertVerified(input.otpToken, input.loginPhone, 'seller_register');
     const [category] = await this.db
       .select({ id: categories.id })
       .from(categories)
@@ -120,7 +126,7 @@ export class AuthService {
       `[TradeKwik] Thanks for registering ${seller.businessName}. We review new sellers within one working day and will message you when your store is live.`,
     );
     await this.notifications.sendEmail(
-      process.env.ADMIN_NOTIFY_EMAIL ?? 'admin@tradekwik.com',
+      process.env.ADMIN_NOTIFY_EMAIL ?? 'tradekwik.team@gmail.com',
       `New seller registration: ${seller.businessName}`,
       `${seller.businessName} (${input.sellerKind}) from ${seller.city}, ${seller.state} registered and is awaiting approval. Owner ${input.ownerName}, ${loginPhone}.`,
     );
@@ -178,6 +184,7 @@ export class AuthService {
       phone: user.phone,
       sellerId: seller.id,
       businessName: seller.businessName,
+      sellerSlug: seller.slug,
       sellerUserRole: user.role,
       permissions: [...SELLER_ROLE_PERMISSIONS[user.role]],
     };
@@ -185,7 +192,45 @@ export class AuthService {
 
   // ---------- admin ----------
 
-  async loginAdmin(input: AdminLoginInput): Promise<LoginResponseDto> {
+  /** Normalise Express IPs: "::ffff:127.0.0.1" → "127.0.0.1", "::1" stays. */
+  private static cleanIp(ip: string | undefined): string {
+    return (ip ?? '').replace(/^::ffff:/, '').trim();
+  }
+
+  /** True when the request IP is in `admin_allowed_ips` (active). */
+  async isAdminIpAllowed(rawIp: string | undefined): Promise<boolean> {
+    const ip = AuthService.cleanIp(rawIp);
+    if (!ip) return false;
+    const [row] = await this.db
+      .select({ id: adminAllowedIps.id })
+      .from(adminAllowedIps)
+      .where(and(eq(adminAllowedIps.ip, ip), eq(adminAllowedIps.isActive, true)))
+      .limit(1);
+    return Boolean(row);
+  }
+
+  /** Throws a plain 404 so the endpoint looks non-existent to outsiders. */
+  async assertAdminIp(rawIp: string | undefined): Promise<void> {
+    if (!(await this.isAdminIpAllowed(rawIp))) throw new NotFoundException('Not found.');
+  }
+
+  async loginAdmin(input: AdminLoginInput, rawIp?: string): Promise<LoginResponseDto> {
+    await this.assertAdminIp(rawIp);
+
+    const [code] = await this.db
+      .select()
+      .from(adminAccessCodes)
+      .where(
+        and(
+          eq(adminAccessCodes.code, input.accessCode),
+          eq(adminAccessCodes.isActive, true),
+          or(isNull(adminAccessCodes.expiresAt), gt(adminAccessCodes.expiresAt, new Date())),
+        ),
+      )
+      .limit(1);
+    if (!code) throw new UnauthorizedException(BAD_CREDENTIALS);
+    await this.db.update(adminAccessCodes).set({ lastUsedAt: new Date() }).where(eq(adminAccessCodes.id, code.id));
+
     const [admin] = await this.db
       .select()
       .from(platformAdmins)
@@ -217,6 +262,7 @@ export class AuthService {
 
   async registerBuyer(input: BuyerRegisterInput): Promise<LoginResponseDto> {
     const phone = normalizePhone(input.phone);
+    this.otp.assertVerified(input.otpToken, phone, 'buyer_register');
     const [taken] = await this.db
       .select({ id: buyers.id })
       .from(buyers)
@@ -238,6 +284,7 @@ export class AuthService {
         companyName: input.companyName ?? null,
         city: input.city ?? null,
         state: input.state ?? null,
+        verificationStatus: 'phone_verified',
       })
       .returning();
 

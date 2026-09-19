@@ -50,6 +50,41 @@ export const sellerCardSchema = publicSellerSchema.pick({
 
 export type SellerCardDto = z.infer<typeof sellerCardSchema>;
 
+// ---------- public seller directory ----------
+
+/** A seller as listed on /sellers. */
+export const sellerListItemSchema = publicSellerSchema.extend({
+  productCount: z.number().int(),
+  /** True while the seller's plan (or trial) includes featured placement. */
+  isFeatured: z.boolean(),
+});
+export type SellerListItemDto = z.infer<typeof sellerListItemSchema>;
+
+export const SELLER_DIRECTORY_SORTS = ["featured", "newest", "name"] as const;
+export type SellerDirectorySort = (typeof SELLER_DIRECTORY_SORTS)[number];
+
+/** Query params for GET /sellers */
+export const sellerDirectoryQuerySchema = z.object({
+  q: z.string().trim().min(1).max(100).optional(),
+  kind: z.enum(SELLER_KINDS).optional(),
+  category: z.string().trim().min(1).optional(),
+  state: z.string().trim().min(1).max(100).optional(),
+  verified: z.coerce.boolean().optional(),
+  sort: z.enum(SELLER_DIRECTORY_SORTS).default("featured"),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(48).default(12),
+});
+export type SellerDirectoryQuery = z.infer<typeof sellerDirectoryQuerySchema>;
+
+export const sellerDirectoryMetaSchema = z.object({
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  total: z.number().int(),
+  /** States present across all active sellers, for the filter chips. */
+  states: z.array(z.string()),
+});
+export type SellerDirectoryMeta = z.infer<typeof sellerDirectoryMetaSchema>;
+
 // ---------- company profile (About page) ----------
 
 export const processStepSchema = z.object({

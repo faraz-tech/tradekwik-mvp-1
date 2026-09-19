@@ -12,6 +12,7 @@ import {
 import { logout, me, ApiFetchError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/components/auth-context";
+import { storeUrl } from "@/lib/storefront";
 
 interface NavItem {
   href: string;
@@ -29,12 +30,14 @@ const SELLER_NAV: NavItem[] = [
   { href: "/owners", label: "Owners & team", permission: "profile:read" },
   { href: "/documents", label: "Documents & verification", permission: "profile:read" },
   { href: "/store-settings", label: "Store settings", permission: "profile:read" },
+  { href: "/billing", label: "Billing & plan", permission: "profile:read" },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/super/overview", label: "Overview", permission: "overview:read" },
   { href: "/super/sellers", label: "Sellers", permission: "sellers:read" },
   { href: "/super/verification", label: "Verification desk", permission: "sellers:verify" },
+  { href: "/super/categories", label: "Categories", permission: "categories:manage" },
   { href: "/super/inquiries", label: "Inquiries", permission: "inquiries:read" },
 ];
 
@@ -95,6 +98,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           <p className="mt-1 truncate px-2 text-xs text-muted-foreground" title={subtitle}>
             {subtitle}
           </p>
+          {user?.role === "seller" && (
+            <a
+              href={storeUrl(user.sellerSlug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 px-2 text-xs font-medium text-blue-700 hover:underline"
+            >
+              View your store ↗
+            </a>
+          )}
           <nav className="mt-6 flex flex-1 flex-col gap-1">
             {NAV.map((item) => (
               <Link
@@ -117,6 +130,11 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-900">
+            <span className="mr-1 rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase">Beta</span>
+            TradeKwik is under development — if something breaks or feels wrong, email{" "}
+            <a href="mailto:tradekwik.team@gmail.com?subject=TradeKwik%20seller%20feedback" className="font-semibold underline">tradekwik.team@gmail.com</a>.
+          </div>
           {/* mobile top nav */}
           <header className="flex items-center gap-2 overflow-x-auto border-b bg-background px-4 py-2 sm:hidden">
             {NAV.map((item) => (

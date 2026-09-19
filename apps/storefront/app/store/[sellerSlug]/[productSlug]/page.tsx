@@ -91,10 +91,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <span className="text-stone-700">{product.name}</span>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <MediaGallery media={product.media} name={product.name} />
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+        <div className="lg:col-start-1">
+          <MediaGallery media={product.media} name={product.name} />
+        </div>
 
-        <div>
+        <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3">
           <h1 className="text-2xl font-bold text-stone-900 sm:text-3xl">{product.name}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -196,13 +198,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </section>
           )}
         </div>
-      </div>
-
-      {/* Inquiry + order forms */}
-      <div className="mt-12 grid gap-8 lg:grid-cols-2">
+        {/* Inquiry + order forms — under the gallery on desktop, after details on mobile */}
         <section
           id="inquiry"
-          className="scroll-mt-24 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"
+          className="lg:col-start-1 scroll-mt-24 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"
         >
           <h2 className="text-lg font-semibold text-stone-900">
             Send an inquiry for this product
@@ -221,7 +220,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {orderable && (
           <section
             id="order"
-            className="scroll-mt-24 rounded-2xl border border-amber-200 bg-amber-50/40 p-6 shadow-sm"
+            className="lg:col-start-1 scroll-mt-24 rounded-2xl border border-amber-200 bg-amber-50/40 p-6 shadow-sm"
           >
             <h2 className="text-lg font-semibold text-stone-900">Order / book now</h2>
             <p className="mb-4 mt-1 text-sm text-stone-500">

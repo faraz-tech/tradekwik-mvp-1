@@ -8,6 +8,8 @@ import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { createDb } from './client.js';
 import {
+  adminAccessCodes,
+  adminAllowedIps,
   buyerDocuments,
   buyers,
   categories,
@@ -22,6 +24,7 @@ import {
   sellerUsers,
   sellers,
   shipments,
+  subscriptionGrants,
 } from './schema.js';
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -41,6 +44,9 @@ async function seed() {
   await db.delete(orderEvents);
   await db.delete(shipments);
   await db.delete(sellerDocuments);
+  await db.delete(subscriptionGrants);
+  await db.delete(adminAllowedIps);
+  await db.delete(adminAccessCodes);
   await db.delete(buyerDocuments);
   await db.delete(inquiries);
   await db.delete(orderRequests);
@@ -55,9 +61,25 @@ async function seed() {
   const [embroideryCat, iceCreamCat, garmentsCat] = await db
     .insert(categories)
     .values([
-      { name: 'Embroidery Machines', slug: 'embroidery-machines' },
-      { name: 'Ice Cream & Desserts', slug: 'ice-cream-desserts' },
-      { name: 'Garments & Tailoring', slug: 'garments-tailoring' },
+      { name: 'Embroidery Machines', slug: 'embroidery-machines', sortOrder: 1 },
+      { name: 'Ice Cream & Desserts', slug: 'ice-cream-desserts', sortOrder: 2 },
+      { name: 'Garments & Tailoring', slug: 'garments-tailoring', sortOrder: 3 },
+      { name: 'Home Decoration', slug: 'home-decoration', sortOrder: 4 },
+      { name: 'Furniture', slug: 'furniture', sortOrder: 5 },
+      { name: 'Kitchen & Dining', slug: 'kitchen-dining', sortOrder: 6 },
+      { name: 'Handicrafts & Gifts', slug: 'handicrafts-gifts', sortOrder: 7 },
+      { name: 'Textiles & Fabrics', slug: 'textiles-fabrics', sortOrder: 8 },
+      { name: 'Packaging & Printing', slug: 'packaging-printing', sortOrder: 9 },
+      { name: 'Hardware & Tools', slug: 'hardware-tools', sortOrder: 10 },
+      { name: 'Electricals & Electronics', slug: 'electricals-electronics', sortOrder: 11 },
+      { name: 'Industrial Machines', slug: 'industrial-machines', sortOrder: 12 },
+      { name: 'Building Material', slug: 'building-material', sortOrder: 13 },
+      { name: 'Agriculture & Farming', slug: 'agriculture-farming', sortOrder: 14 },
+      { name: 'Food & Beverages', slug: 'food-beverages', sortOrder: 15 },
+      { name: 'Beauty & Wellness', slug: 'beauty-wellness', sortOrder: 16 },
+      { name: 'Jewellery & Accessories', slug: 'jewellery-accessories', sortOrder: 17 },
+      { name: 'Footwear', slug: 'footwear', sortOrder: 18 },
+      { name: 'Stationery & Office', slug: 'stationery-office', sortOrder: 19 },
     ])
     .returning();
 
@@ -85,6 +107,7 @@ async function seed() {
         sellerKind: 'manufacturer',
         foundedYear: 2009,
         teamSizeRange: '21-50',
+        trialEndsAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         verifiedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
       },
       {
@@ -107,6 +130,7 @@ async function seed() {
         sellerKind: 'retailer',
         foundedYear: 2018,
         teamSizeRange: '6-20',
+        trialEndsAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
       },
       {
         slug: 'perfect-fit-tailors',
@@ -128,6 +152,7 @@ async function seed() {
         sellerKind: 'retailer',
         foundedYear: 2011,
         teamSizeRange: '1-5',
+        trialEndsAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       },
       {
         slug: 'gujarat-thread-and-trims',
@@ -149,6 +174,7 @@ async function seed() {
         sellerKind: 'wholesaler',
         foundedYear: 2014,
         teamSizeRange: '6-20',
+        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     ])
     .returning();
@@ -251,6 +277,34 @@ async function seed() {
     },
   ]);
 
+  console.log('Inserting plan grants...');
+  const yearFromNow = new Date(); yearFromNow.setFullYear(yearFromNow.getFullYear() + 1);
+  const monthAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
+  const monthFromNow = new Date(monthAgo); monthFromNow.setMonth(monthFromNow.getMonth() + 1);
+  await db.insert(subscriptionGrants).values([
+    {
+      sellerId: embroiderySeller.id,
+      plan: 'unlimited',
+      cycle: 'year',
+      startsAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      endsAt: yearFromNow,
+      amountPaid: 29999,
+      paymentMethod: 'bank_transfer',
+      reference: 'NEFT-2026-0891',
+      note: 'Launch partner — yearly Unlimited.',
+    },
+    {
+      sellerId: iceCreamSeller.id,
+      plan: 'basic',
+      cycle: 'month',
+      startsAt: monthAgo,
+      endsAt: monthFromNow,
+      amountPaid: 499,
+      paymentMethod: 'upi',
+      reference: 'UPI-4471',
+    },
+  ]);
+
   console.log('Inserting compliance documents...');
   const pdf = (name: string) => `https://placehold.co/800x1000?text=${encodeURIComponent(name)}`;
   const reviewedAt = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
@@ -350,6 +404,13 @@ async function seed() {
       role: 'logistics',
     },
   ]);
+
+  // Dev-only admin allow-list: localhost + a demo access code. In production, insert your own rows.
+  await db.insert(adminAllowedIps).values([
+    { ip: '127.0.0.1', label: 'localhost (IPv4)' },
+    { ip: '::1', label: 'localhost (IPv6)' },
+  ]);
+  await db.insert(adminAccessCodes).values({ code: 'TK-DEV-2026', label: 'dev code — replace in production' });
 
   const adminHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
   await db.insert(platformAdmins).values([
@@ -849,7 +910,7 @@ async function seed() {
   ]);
 
   const counts = {
-    categories: 3,
+    categories: 19,
     sellers: 4,
     sellerUsers: 5,
     platformAdmins: 1,
@@ -862,8 +923,9 @@ async function seed() {
   console.log('\nLogin credentials (dev only):');
   console.log(`  Sellers  → phone +919876500001 / 02 / 03 / 04 (owners), +919876500011 (logistics staff), password: ${SELLER_PASSWORD}`);
   console.log(`  Buyer    → phone +919876500099, password: ${BUYER_PASSWORD}`);
-  console.log(`  Admin    → admin@tradekwik.com, password: ${ADMIN_PASSWORD}`);
+  console.log(`  Admin    → http://localhost:3001/admin-access — admin@tradekwik.com / ${ADMIN_PASSWORD} / access code TK-DEV-2026 (localhost only)`);
   console.log(`  Verifier → verifier@tradekwik.com, password: ${ADMIN_PASSWORD}`);
+  console.log('Plans: Shakti = Unlimited (yearly), Meltz = Basic (monthly, also on trial), Gujarat Thread = 7-day trial, Perfect Fit = trial EXPIRED (read-only).');
 }
 
 seed()

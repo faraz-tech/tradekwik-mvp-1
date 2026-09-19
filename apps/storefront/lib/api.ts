@@ -6,7 +6,10 @@ import type {
   PublicProductDto,
   PublicSellerAboutDto,
   PublicSellerDto,
+  SellerDirectoryMeta,
+  SellerDirectoryQuery,
   SellerKind,
+  SellerListItemDto,
   SitemapDataDto,
   StoreProductsMeta,
   StoreProductsQuery,
@@ -54,6 +57,35 @@ export function getSeller(slug: string): Promise<PublicSellerDto | null> {
 /** Company details, process, social links, videos and owners for the About page. */
 export function getSellerAbout(slug: string): Promise<PublicSellerAboutDto | null> {
   return apiGetOrNull<PublicSellerAboutDto>(`/sellers/${encodeURIComponent(slug)}/about`);
+}
+
+export interface SellerDirectoryResult extends SellerDirectoryMeta {
+  items: SellerListItemDto[];
+}
+
+/** Public seller directory (/sellers). */
+export async function listSellers(
+  params: Partial<SellerDirectoryQuery> = {},
+): Promise<SellerDirectoryResult> {
+  const search = new URLSearchParams();
+  if (params.q) search.set("q", params.q);
+  if (params.kind) search.set("kind", params.kind);
+  if (params.category) search.set("category", params.category);
+  if (params.state) search.set("state", params.state);
+  if (params.verified) search.set("verified", "true");
+  if (params.sort && params.sort !== "featured") search.set("sort", params.sort);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
+  if (params.pageSize) search.set("pageSize", String(params.pageSize));
+  const qs = search.toString();
+
+  const res = await fetch(`${API_URL}/sellers${qs ? `?${qs}` : ""}`, {
+    next: { revalidate: REVALIDATE },
+  });
+  if (!res.ok) throw new ApiRequestError(res.status, "/sellers");
+  const body = (await res.json()) as ApiResponse<SellerListItemDto[]> & {
+    meta: SellerDirectoryMeta;
+  };
+  return { items: body.data, ...body.meta };
 }
 
 export interface StoreProductsResult extends StoreProductsMeta {

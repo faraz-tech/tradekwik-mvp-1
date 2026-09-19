@@ -113,12 +113,14 @@ export default async function StorePage({ params, searchParams }: StorePageProps
                 {seller.description}
               </p>
             )}
-            <Link
-              href={`/store/${seller.slug}/about`}
-              className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline"
-            >
-              About the company, people &amp; process →
-            </Link>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
+              <Link href={`/store/${seller.slug}/about`} className="text-blue-700 hover:underline">
+                About the company, people &amp; process →
+              </Link>
+              <Link href="/sellers" className="text-stone-500 hover:text-blue-700">
+                Browse all sellers
+              </Link>
+            </div>
           </div>
         </div>
 

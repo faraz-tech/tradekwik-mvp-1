@@ -16,7 +16,11 @@ import type {
   CreateOrderRequestInput,
   CreatedResourceDto,
   LoginResponseDto,
+  SendOtpInput,
+  SendOtpResponseDto,
   UpdateBuyerProfileInput,
+  VerifyOtpInput,
+  VerifyOtpResponseDto,
 } from "@tradekwik/shared";
 
 /** Browser-side API base (forms post directly to the API; CORS allows it). */
@@ -85,6 +89,13 @@ export function submitInquiry(input: CreateInquiryInput): Promise<SubmitResult> 
 export function submitOrderRequest(input: CreateOrderRequestInput): Promise<SubmitResult> {
   return post("/order-requests", input);
 }
+
+// ---- OTP ----
+
+export const sendOtp = (input: SendOtpInput) =>
+  request<SendOtpResponseDto>("/auth/otp/send", json("POST", input));
+export const verifyOtp = (input: VerifyOtpInput) =>
+  request<VerifyOtpResponseDto>("/auth/otp/verify", json("POST", input));
 
 // ---- buyer auth ----
 

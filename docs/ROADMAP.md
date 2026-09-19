@@ -298,6 +298,36 @@ No login needed; this is pure storefront work plus one small analytics endpoint.
 
 ---
 
+### 2.15 Category browsing — 🟢 done
+
+Seed ships 19 starter categories (machines, home decoration, furniture, kitchen, handicrafts, textiles, packaging, hardware, electricals, industrial, building material, agriculture, food, beauty, jewellery, footwear, stationery). Homepage shows the first six with a "View all" link to `/categories`, which lists every category (with sub-categories) and links each to its product listing at `/category/<slug>`.
+
+---
+
+### 2.14 Seller directory — 🟢 done
+
+Public `/sellers` page listing every active seller with text search and filters (seller kind, category, state, verified-only), three sort orders and pagination. Featured-first ordering uses the plan flag (`PLAN_DEFINITIONS[plan].limits.featured`, trial counts as featured), so Pro/Unlimited sellers surface above Basic. Linked from the header, the homepage "Latest sellers" section and each store page.
+
+---
+
+### 2.13 Category management — 🟢 done
+
+Super-admin CRUD for categories (`categories:manage` permission, super_admin only) with hide/show, sort order and one level of sub-categories; sellers submit suggestions (`category_requests`) from the product form which admins approve into real categories.
+
+---
+
+### 2.12 Pricing & plans — 🟡 manual billing live, Razorpay pending
+
+Sellers are always on a paid plan after a **7-day full-access trial** that starts on approval. Plans (`PLAN_DEFINITIONS` in `packages/shared/src/schemas/billing.ts`): **Basic ₹499/mo (25 products, 2 logins)**, **Pro ₹1,499/mo (100 products, 5 logins, featured, priority verification)**, **Unlimited ₹2,999/mo (unlimited products, 20 logins)**; yearly at ~2 months off. Limits are enforced in the API (product/team creation) and a lapsed trial/plan blocks all seller mutations while reads stay open. Admins activate a plan manually after an offline payment from *Sellers → Plan* (records amount, method, reference; extends an active period). **Not yet:** Razorpay checkout and webhooks, GST invoices, automatic renewal reminders.
+
+---
+
+### 2.11 Mobile OTP verification — 🟢 done
+
+Both sign-ups (buyer at `/account/register`, seller at seller-app `/register`) require the mobile number to be verified by a 6-digit OTP before the account is created. Codes are hashed and expire in 10 minutes. Defaults (all env-configurable): **2 codes per number per 24 h, 3 wrong attempts per code**, 60 s between sends, 10 codes per IP per day; a code is burned after the last wrong attempt and after one successful use. Verification yields a 15-minute token that the register endpoint checks against the phone. Provider is chosen by `OTP_PROVIDER`: `console` (dev — code is logged and shown on screen), `msg91`, or `2factor`. Buyers registering this way start as `phone_verified`.
+
+---
+
 ### 2.10 Seller self-registration — 🟢 done
 
 Public sign-up at `/register` in the seller app (linked from the storefront header and footer). Creates the store as `pending` with the owner login; login is refused with an "awaiting approval" message until a super admin approves it from *Sellers*. After approval the dashboard shows a setup checklist (store settings → company profile → first product → documents → Verified badge). Admin gets an email stub on each registration. Phone OTP still pending (needs SMS provider).

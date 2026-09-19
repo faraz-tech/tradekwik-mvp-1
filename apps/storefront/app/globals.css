@@ -9,3 +9,10 @@ body {
   background: #fafaf9;
   color: #1c1917;
 }
+
+/* Home highlights carousel slide transition */
+@keyframes tk-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.tk-fadein { animation: tk-fadein 0.5s ease; }

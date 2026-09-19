@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { OtpModule } from '../otp/otp.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtStrategy } from './jwt.strategy.js';
@@ -10,6 +11,7 @@ import { JwtStrategy } from './jwt.strategy.js';
 @Module({
   imports: [
     NotificationsModule,
+    OtpModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],

@@ -17,6 +17,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { PhoneVerify } from "@/components/phone-verify";
 
 type FormInput = z.input<typeof sellerRegisterSchema>;
 type FormOutput = z.output<typeof sellerRegisterSchema>;
@@ -29,15 +38,20 @@ export default function RegisterSellerPage() {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [done, setDone] = useState<{ businessName: string; slug: string } | null>(null);
+  const [noticeOpen, setNoticeOpen] = useState(true);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(sellerRegisterSchema),
-    defaultValues: { sellerKind: "retailer", servesPanIndia: false },
+    defaultValues: { sellerKind: "retailer", servesPanIndia: false, otpToken: "" },
   });
+  const loginPhone = watch("loginPhone") ?? "";
+  const otpToken = watch("otpToken") ?? "";
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => setCategories([]));
@@ -61,18 +75,26 @@ export default function RegisterSellerPage() {
         <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle className="text-xl">Thanks, {done.businessName}!</CardTitle>
-            <CardDescription>Your store is registered and awaiting approval.</CardDescription>
+            <CardDescription>Your details are saved. We will notify you when TradeKwik is ready.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 text-sm">
             <p>
-              Our team reviews new sellers, usually within one working day. You will get a WhatsApp
-              message on your registered number once your store is live.
+              TradeKwik is still being built. When the platform is ready, you will get a message on
+              your registered mobile number: your account will be approved and your free trial will
+              start from that day.
             </p>
             <ol className="grid list-decimal gap-1 pl-5 text-muted-foreground">
-              <li>After approval, log in with your mobile number and password.</li>
-              <li>Fill in your store settings and company profile.</li>
-              <li>Add products, then upload documents to earn the Verified badge.</li>
+              <li>Wait for our message — nothing to do until then.</li>
+              <li>Then log in with your mobile number and password.</li>
+              <li>Fill in your store, add products and upload documents for the Verified badge.</li>
             </ol>
+            <p>
+              Questions or want to be listed early? Email{" "}
+              <a href="mailto:tradekwik.team@gmail.com" className="font-medium text-blue-700 underline">
+                tradekwik.team@gmail.com
+              </a>
+              .
+            </p>
             <p className="text-xs text-muted-foreground">Your store address will be /store/{done.slug}</p>
             <Button asChild>
               <Link href="/login">Go to login</Link>
@@ -85,15 +107,59 @@ export default function RegisterSellerPage() {
 
   return (
     <main className="flex min-h-screen items-start justify-center bg-muted/40 p-4 py-10">
+      <Dialog open={noticeOpen} onOpenChange={setNoticeOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span aria-hidden>⚠️</span> Please read before you register
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="grid gap-3 pt-2 text-sm text-foreground">
+                <p>
+                  We are still building TradeKwik. Fill in your details now and we will keep them safe.
+                  When the platform is ready you will be notified on your mobile number, your account
+                  will be approved and your free trial will start from that day.
+                </p>
+                <p>
+                  Want to get your listing in early, or have a question? Email{" "}
+                  <a href="mailto:tradekwik.team@gmail.com" className="font-semibold text-blue-700 underline">
+                    tradekwik.team@gmail.com
+                  </a>
+                  .
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setNoticeOpen(false)}>
+              I understand, continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle className="text-xl">
             Sell on Trade<span className="text-blue-700">Kwik</span>
           </CardTitle>
           <CardDescription>
-            Free to list. Buyers contact you directly on WhatsApp or phone — no commission, no
-            middlemen. Approval takes about one working day.
+            Buyers contact you directly on WhatsApp or phone — no middlemen.
           </CardDescription>
+          <div className="mt-3 grid gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+            <p>
+              <strong>We are still building TradeKwik.</strong> Fill in your details now and we will keep
+              them safe. When the platform is ready you will be notified on your mobile number, your
+              account will be approved and your free trial will start from that day.
+            </p>
+            <p>
+              Want to get your listing in early, or have a question? Email{" "}
+              <a href="mailto:tradekwik.team@gmail.com" className="font-semibold underline">
+                tradekwik.team@gmail.com
+              </a>
+              .
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="grid gap-5">
@@ -177,14 +243,23 @@ export default function RegisterSellerPage() {
                 {err(errors.loginPhone?.message)}
               </div>
               <div className="grid gap-1.5 sm:col-span-2">
+                <PhoneVerify
+                  phone={loginPhone}
+                  purpose="seller_register"
+                  onVerified={(token) => setValue("otpToken", token ?? "", { shouldValidate: Boolean(token) })}
+                />
+                <input type="hidden" {...register("otpToken")} />
+                {err(errors.otpToken?.message)}
+              </div>
+              <div className="grid gap-1.5 sm:col-span-2">
                 <Label htmlFor="password">Password *</Label>
                 <Input id="password" type="password" {...register("password")} />
                 {err(errors.password?.message)}
               </div>
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating…" : "Create seller account"}
+            <Button type="submit" disabled={isSubmitting || !otpToken}>
+              {isSubmitting ? "Creating…" : otpToken ? "Create seller account" : "Verify your mobile number to continue"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already registered?{" "}

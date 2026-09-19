@@ -44,6 +44,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { PermissionsGuard } from '../../common/guards/permissions.guard.js';
+import { SubscriptionGuard } from '../billing/subscription.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { RequirePermission } from '../../common/decorators/permissions.decorator.js';
 import { CurrentSeller, CurrentUser } from '../../common/decorators/current-user.decorator.js';
@@ -77,7 +78,7 @@ function sellerActor(user: JwtPayload): Actor {
 @ApiBearerAuth()
 @ApiCookieAuth('token')
 @Controller('seller')
-@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard, SubscriptionGuard)
 @Roles('seller')
 export class SellerController {
   constructor(

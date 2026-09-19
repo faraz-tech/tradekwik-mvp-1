@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { OrderRequestsModule } from '../orders/order-requests.module.js';
+import { BillingModule } from '../billing/billing.module.js';
 import { SellerController } from './seller.controller.js';
 import { SellerService } from './seller.service.js';
 import { SellerProductsService } from './seller-products.service.js';
 import { SellerRequestsService } from './seller-requests.service.js';
 
 @Module({
-  imports: [PassportModule.register({ defaultStrategy: 'jwt' }), OrderRequestsModule],
+  imports: [PassportModule.register({ defaultStrategy: 'jwt' }), OrderRequestsModule, BillingModule],
   controllers: [SellerController],
   providers: [SellerService, SellerProductsService, SellerRequestsService],
 })

@@ -6,6 +6,7 @@ import type {
   UpdateProductInput,
 } from '@tradekwik/shared';
 import { DB } from '../../db/db.module.js';
+import { BillingService } from '../billing/billing.service.js';
 import type { Database } from '../../db/client.js';
 import { categories, products } from '../../db/schema.js';
 import { toSellerProductDto } from '../../common/mappers.js';
@@ -22,7 +23,10 @@ function slugify(name: string): string {
 
 @Injectable()
 export class SellerProductsService {
-  constructor(@Inject(DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DB) private readonly db: Database,
+    private readonly billing: BillingService,
+  ) {}
 
   async list(sellerId: string): Promise<SellerProductDto[]> {
     const rows = await this.db
@@ -34,6 +38,7 @@ export class SellerProductsService {
   }
 
   async create(sellerId: string, input: CreateProductInput): Promise<SellerProductDto> {
+    await this.billing.assertCanAddProduct(sellerId);
     await this.requireCategory(input.categoryId);
     const slug = await this.uniqueSlug(sellerId, input.slug ?? slugify(input.name));
 

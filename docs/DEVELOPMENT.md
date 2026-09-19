@@ -1,6 +1,6 @@
 # TradeKwik — Development Guide
 
-Everything you need to run, test, and work on this project. For a project overview see the [README](../README.md); for the product spec see [tradekwik-build-prompt-v2.md](../tradekwik-build-prompt-v2.md). For what comes after the MVP see [ROADMAP.md](ROADMAP.md).
+Everything you need to run, test, and work on this project. For a project overview see the [README](../README.md); for the product spec see [tradekwik-build-prompt-v2.md](../tradekwik-build-prompt-v2.md). For what comes after the MVP see [ROADMAP.md](ROADMAP.md). To put it live see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ---
 
@@ -28,11 +28,31 @@ Everything you need to run, test, and work on this project. For a project overvi
 | Seller owner — Perfect Fit Tailors (retailer) | http://localhost:3001 | phone `9876500003` | `seller123` |
 | Seller owner — Gujarat Thread & Trims (wholesaler) | http://localhost:3001 | phone `9876500004` | `seller123` |
 | Seller staff — Shakti, **logistics** role (orders + transport only) | http://localhost:3001 | phone `9876500011` | `seller123` |
-| Super admin | http://localhost:3001 (Admin tab) | `admin@tradekwik.com` | `admin123` |
-| Verifier (documents & buyer verification only) | http://localhost:3001 (Admin tab) | `verifier@tradekwik.com` | `admin123` |
+| Super admin | http://localhost:3001/admin-access (unlisted; localhost only + access code `TK-DEV-2026`) | `admin@tradekwik.com` | `admin123` |
+| Verifier (documents & buyer verification only) | http://localhost:3001/admin-access | `verifier@tradekwik.com` | `admin123` |
 | Buyer — Priya Sharma (has 2 demo orders, one in transit with a bilty) | http://localhost:3000/account/login | phone `9876500099` | `buyer123` |
 
+OTP abuse limits are env-driven (`OTP_MAX_SENDS_PER_DAY=2`, `OTP_MAX_ATTEMPTS=3`, per-IP daily cap; see `apps/api/.env.example`). In dev, sign-up OTPs are printed in the API log and shown on the form (`OTP_PROVIDER=console`); set `msg91` or `2factor` with the keys from `.env.example` for real SMS.
+
 Seller and buyer sessions use different cookies (`token` vs `buyer_token`), so you can be logged in as both in one browser.
+
+### Categories
+
+Only super admins manage categories (super admin → *Categories*): add, rename, reorder, hide, optional parent (two levels). Categories in use cannot be deleted, only hidden. Sellers see a "Can't find your category? Suggest one" link on the product form; suggestions appear at the top of the Categories page for approve (creates it) / reject.
+
+### Admin access control (production)
+
+The admin login lives at the unlisted `/admin-access` page and the API only answers for allow-listed IPs. Manage it directly in Postgres:
+
+```sql
+-- allow your office / home IP (find it at https://ifconfig.me)
+insert into admin_allowed_ips (ip, label) values ('203.0.113.42', 'Faraz home');
+-- rotate the access code (old one keeps working until you deactivate it)
+insert into admin_access_codes (code, label, expires_at) values ('some-long-random-code', 'Sept 2026', now() + interval '30 days');
+update admin_access_codes set is_active = false where label = 'dev code — replace in production';
+```
+
+If the API sits behind nginx or a load balancer, set `TRUST_PROXY=1` in the API env or every request will look like it comes from the proxy.
 
 ### Key flows to try
 
@@ -41,7 +61,8 @@ Seller and buyer sessions use different cookies (`token` vs `buyer_token`), so y
 3. **Roles:** log in as the logistics staff (`9876500011`) — only Dashboard and Orders are visible; product APIs return 403.
 4. **Trust pages:** http://localhost:3000/store/shakti-embroidery-machines/about (company, people, process, videos). Edit via seller admin → *Company profile* and *Owners & team*.
 5. **Wholesale:** http://localhost:3000/search?kind=wholesaler and the Gujarat Thread store — tiered pricing, wholesale-only listings, minimum quantities.
-6. **Seller sign-up:** http://localhost:3001/register — creates a *pending* store; approve it under super admin → Sellers, then log in with the chosen mobile number. The dashboard shows a setup checklist.
+6. **Plans:** super admin → Sellers → *Plan* to activate Basic/Pro/Unlimited for a month or year after an offline payment. Perfect Fit Tailors is seeded with an expired trial — log in as `9876500003` to see the read-only state and the Billing page.
+7. **Seller sign-up:** http://localhost:3001/register — creates a *pending* store; approve it under super admin → Sellers, then log in with the chosen mobile number. The dashboard shows a setup checklist.
 7. **Verification:** log in as the verifier → *Verification desk* — Gujarat Thread has pending documents and Priya has requested business verification. Approve them and watch the Verified badge appear on the store and the buyer's profile. Sellers upload under *Documents & verification*.
 
 ## 2. First-time setup
@@ -258,6 +279,7 @@ Baseline on the product page (mobile): **Perf 96 · SEO 100 · A11y 100 · Best 
 | --- | --- |
 | `EADDRINUSE` / port already in use | Something holds 3000/3001/4000: `netstat -ano \| findstr :4000` then `taskkill /PID <pid> /F` |
 | API: `password authentication failed` | Wrong Postgres password in `apps/api/.env` `DATABASE_URL` |
+| Storefront shows **Page not found** for a URL that worked before (store, product or About page) while the API answers 200 | Stale Turbopack dev cache — the dev server lost the route from its tree. Save any edit to that page file to force a recompile, or stop the storefront, delete `apps/storefront/.next`, and start it again. Seen after API restarts and after the dev server is restarted with an old cache. |
 | API: `relation ... does not exist` | Migrations not applied: `pnpm --filter @tradekwik/api db:migrate` |
 | Storefront shows "API: not reachable" / empty homepage | API isn't running, or `API_URL` wrong |
 | Types out of date across apps ("property does not exist" on a shared type) | `pnpm --filter @tradekwik/shared build` (or keep `pnpm dev` running) |

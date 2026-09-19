@@ -48,6 +48,7 @@ export const ADMIN_PERMISSIONS = [
   "inquiries:read",
   "buyers:read",
   "buyers:verify",
+  "categories:manage",
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 

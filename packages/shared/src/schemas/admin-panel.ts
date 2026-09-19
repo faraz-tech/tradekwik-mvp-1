@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SELLER_KINDS, SELLER_STATUSES } from "../constants.js";
+import { PLANS, SUBSCRIPTION_STATES } from "./billing.js";
 import { indianPhoneSchema } from "./common.js";
 import { sellerInquirySchema } from "./seller-panel.js";
 import { sellerProfileSchema } from "./seller-panel.js";
@@ -9,6 +10,11 @@ export const adminSellerSchema = sellerProfileSchema.extend({
   ownerName: z.string().nullable(),
   ownerPhone: z.string().nullable(),
   productCount: z.number().int(),
+  subscription: z.object({
+    state: z.enum(SUBSCRIPTION_STATES),
+    effectivePlan: z.enum(PLANS).nullable(),
+    currentPeriodEndsAt: z.iso.datetime().nullable(),
+  }),
 });
 export type AdminSellerDto = z.infer<typeof adminSellerSchema>;
 

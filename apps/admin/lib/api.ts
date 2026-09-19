@@ -1,5 +1,11 @@
 import type {
   AdminBuyerVerificationDto,
+  AdminCategoryDto,
+  CategoryRequestDto,
+  CreateCategoryInput,
+  CreateCategoryRequestInput,
+  ReviewCategoryRequestInput,
+  UpdateCategoryInput,
   AdminInquiryDto,
   AdminLoginInput,
   AdminSellerVerificationDto,
@@ -12,6 +18,8 @@ import type {
   CreateOwnerInput,
   CreateSellerInput,
   CreateTeamMemberInput,
+  ExtendTrialInput,
+  GrantPlanInput,
   PlatformOverviewDto,
   ReviewBuyerInput,
   ReviewDocumentInput,
@@ -30,6 +38,11 @@ import type {
   SellerProfileDto,
   SellerRegisterInput,
   SellerRegisterResponseDto,
+  SellerSubscriptionDto,
+  SendOtpInput,
+  SendOtpResponseDto,
+  VerifyOtpInput,
+  VerifyOtpResponseDto,
   SellerTeamMemberDto,
   SellerVerificationDto,
   UpdateDocumentInput,
@@ -93,6 +106,12 @@ export const login = (input: SellerLoginInput) =>
 export const adminLogin = (input: AdminLoginInput) =>
   request<LoginResponseDto>("/auth/admin/login", json("POST", input));
 export const logout = () => request<{ ok: true }>("/auth/logout", { method: "POST" });
+/** 404 unless the caller's IP is in admin_allowed_ips. */
+export const adminAccessCheck = () => request<{ allowed: true }>("/auth/admin/access");
+export const sendOtp = (input: SendOtpInput) =>
+  request<SendOtpResponseDto>("/auth/otp/send", json("POST", input));
+export const verifyOtp = (input: VerifyOtpInput) =>
+  request<VerifyOtpResponseDto>("/auth/otp/verify", json("POST", input));
 export const registerSeller = (input: SellerRegisterInput) =>
   request<SellerRegisterResponseDto>("/auth/seller/register", json("POST", input));
 export const me = () => request<AuthUserDto>("/auth/me");
@@ -170,12 +189,38 @@ export const uploadDocument = (file: File) => {
   });
 };
 
+// ---- billing ----
+export const getSubscription = () => request<SellerSubscriptionDto>("/seller/subscription");
+export const adminGetSubscription = (sellerId: string) =>
+  request<SellerSubscriptionDto>(`/admin/sellers/${sellerId}/subscription`);
+export const adminGrantPlan = (sellerId: string, input: GrantPlanInput) =>
+  request<SellerSubscriptionDto>(`/admin/sellers/${sellerId}/subscription`, json("POST", input));
+export const adminExtendTrial = (sellerId: string, input: ExtendTrialInput) =>
+  request<SellerSubscriptionDto>(`/admin/sellers/${sellerId}/subscription/trial`, json("PATCH", input));
+export const adminRevokeGrant = (sellerId: string, grantId: string) =>
+  request<SellerSubscriptionDto>(`/admin/sellers/${sellerId}/subscription/grants/${grantId}`, { method: "DELETE" });
+
 // ---- verification desk (admin) ----
 export const adminVerificationQueue = () => request<VerificationQueueDto>("/admin/verification/queue");
 export const adminReviewDocument = (id: string, input: ReviewDocumentInput) =>
   request<AdminSellerVerificationDto>(`/admin/verification/documents/${id}`, json("PATCH", input));
 export const adminReviewBuyer = (id: string, input: ReviewBuyerInput) =>
   request<AdminBuyerVerificationDto>(`/admin/verification/buyers/${id}`, json("PATCH", input));
+
+// ---- categories ----
+export const createCategoryRequest = (input: CreateCategoryRequestInput) =>
+  request<CategoryRequestDto>("/seller/category-requests", json("POST", input));
+export const adminListCategories = () => request<AdminCategoryDto[]>("/admin/categories");
+export const adminCreateCategory = (input: CreateCategoryInput) =>
+  request<AdminCategoryDto>("/admin/categories", json("POST", input));
+export const adminUpdateCategory = (id: string, input: UpdateCategoryInput) =>
+  request<AdminCategoryDto>(`/admin/categories/${id}`, json("PATCH", input));
+export const adminDeleteCategory = (id: string) =>
+  request<void>(`/admin/categories/${id}`, { method: "DELETE" });
+export const adminListCategoryRequests = (status?: string) =>
+  request<CategoryRequestDto[]>(`/admin/category-requests${status ? `?status=${status}` : ""}`);
+export const adminReviewCategoryRequest = (id: string, input: ReviewCategoryRequestInput) =>
+  request<CategoryRequestDto>(`/admin/category-requests/${id}`, json("PATCH", input));
 
 // ---- super admin ----
 export const adminListSellers = (status?: string) =>

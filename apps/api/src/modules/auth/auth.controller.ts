@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Ip,
   Post,
   Res,
   UseGuards,
@@ -102,11 +103,21 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Bad credentials' })
   async adminLogin(
     @Body() body: AdminLoginDto,
+    @Ip() ip: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ data: LoginResponseDto }> {
-    const result = await this.authService.loginAdmin(body);
+    const result = await this.authService.loginAdmin(body, ip);
     setAuthCookie(res, AUTH_COOKIE, result.token);
     return { data: result };
+  }
+
+  @Get('admin/access')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Admin login availability for this IP (404 unless allow-listed)' })
+  async adminAccess(@Ip() ip: string): Promise<{ data: { allowed: true } }> {
+    await this.authService.assertAdminIp(ip);
+    return { data: { allowed: true } };
   }
 
   @Post('buyer/register')

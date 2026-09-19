@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { SellerDashboardDto } from "@tradekwik/shared";
-import { getDashboard } from "@/lib/api";
+import { PLAN_DEFINITIONS, type SellerDashboardDto, type SellerSubscriptionDto } from "@tradekwik/shared";
+import { getDashboard, getSubscription } from "@/lib/api";
+import { useAuthUser } from "@/components/auth-context";
+import { STOREFRONT_URL, storeAboutUrl, storeUrl } from "@/lib/storefront";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function StatCard({ label, value, href }: { label: string; value: number; href: string }) {
@@ -24,11 +27,14 @@ function StatCard({ label, value, href }: { label: string; value: number; href: 
 }
 
 export default function DashboardPage() {
+  const me = useAuthUser();
   const [data, setData] = useState<SellerDashboardDto | null>(null);
+  const [sub, setSub] = useState<SellerSubscriptionDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getDashboard().then(setData).catch((e: Error) => setError(e.message));
+    getSubscription().then(setSub).catch(() => setSub(null));
   }, []);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -47,6 +53,71 @@ export default function DashboardPage() {
   return (
     <div className="grid gap-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
+
+      {me?.role === "seller" && (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Your public store</p>
+              <a
+                href={storeUrl(me.sellerSlug)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block truncate text-sm text-blue-700 hover:underline"
+              >
+                {STOREFRONT_URL.replace(/^https?:\/\//, "")}/store/{me.sellerSlug} ↗
+              </a>
+              <p className="mt-1 text-xs text-muted-foreground">
+                This is what buyers see. Share the link on WhatsApp, your visiting card or social media.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm">
+                <a href={storeUrl(me.sellerSlug)} target="_blank" rel="noopener noreferrer">
+                  View store
+                </a>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <a href={storeAboutUrl(me.sellerSlug)} target="_blank" rel="noopener noreferrer">
+                  View About page
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {sub && sub.state !== "active" && (
+        <Card className={sub.state === "trial" ? "border-blue-200 bg-blue-50/60" : "border-amber-300 bg-amber-50"}>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <div>
+              <p className="font-semibold">
+                {sub.state === "trial"
+                  ? `Free trial — ${sub.daysLeft} day${sub.daysLeft === 1 ? "" : "s"} left`
+                  : "Your trial has ended — editing is paused"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {sub.state === "trial"
+                  ? "You have full access. Choose a plan before the trial ends to keep adding products and replying to orders."
+                  : "Your store is still live for buyers. Activate a plan to continue editing."}
+              </p>
+            </div>
+            <Link href="/billing" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+              See plans
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+      {sub && sub.state === "active" && sub.daysLeft != null && sub.daysLeft <= 7 && (
+        <Card className="border-amber-200 bg-amber-50/60">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <p className="text-sm">
+              Your <strong>{sub.effectivePlan && PLAN_DEFINITIONS[sub.effectivePlan].name}</strong> plan ends in {sub.daysLeft} day{sub.daysLeft === 1 ? "" : "s"}.
+            </p>
+            <Link href="/billing" className="text-sm font-medium text-blue-700 hover:underline">Renew →</Link>
+          </CardContent>
+        </Card>
+      )}
 
       {remaining > 0 && (
         <Card className="border-blue-200 bg-blue-50/40">

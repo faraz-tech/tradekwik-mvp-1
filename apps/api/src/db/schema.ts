@@ -18,9 +18,12 @@ import {
   ADMIN_ROLES,
   BUYER_TYPES,
   BUYER_VERIFICATION_STATUSES,
+  BILLING_CYCLES,
   DOCUMENT_KINDS,
   DOCUMENT_STATUSES,
   FREIGHT_TERMS,
+  PAYMENT_METHODS,
+  PLANS,
   INQUIRY_SOURCES,
   INQUIRY_STATUSES,
   LISTING_TYPES,
@@ -63,6 +66,9 @@ export const registrationTypeEnum = pgEnum('registration_type', REGISTRATION_TYP
 export const teamSizeRangeEnum = pgEnum('team_size_range', TEAM_SIZE_RANGES);
 export const documentKindEnum = pgEnum('document_kind', DOCUMENT_KINDS);
 export const documentStatusEnum = pgEnum('document_status', DOCUMENT_STATUSES);
+export const planEnum = pgEnum('plan', PLANS);
+export const billingCycleEnum = pgEnum('billing_cycle', BILLING_CYCLES);
+export const paymentMethodEnum = pgEnum('payment_method', PAYMENT_METHODS);
 
 // ---------- shared column helpers ----------
 
@@ -81,8 +87,32 @@ export const categories = pgTable('categories', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   parentId: uuid('parent_id').references((): AnyPgColumn => categories.id),
+  sortOrder: integer('sort_order').notNull().default(0),
+  /** Hidden categories stay attached to existing products/sellers but are not offered or listed. */
+  isActive: boolean('is_active').notNull().default(true),
   ...timestamps,
 });
+
+export const categoryRequestStatusEnum = pgEnum('category_request_status', ['pending', 'approved', 'rejected']);
+
+/** "Can't find your category?" suggestions from sellers, reviewed by a super admin. */
+export const categoryRequests = pgTable(
+  'category_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => sellers.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    note: text('note'),
+    status: categoryRequestStatusEnum('status').notNull().default('pending'),
+    adminNote: text('admin_note'),
+    categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('category_requests_status_idx').on(table.status, table.createdAt)],
+);
 
 export const sellers = pgTable(
   'sellers',
@@ -111,6 +141,8 @@ export const sellers = pgTable(
     foundedYear: integer('founded_year'),
     teamSizeRange: teamSizeRangeEnum('team_size_range'),
     verifiedAt: timestamp('verified_at', { withTimezone: true }),
+    /** Set when the seller is approved; 7 days of full access. */
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
@@ -391,9 +423,75 @@ export const buyerDocuments = pgTable(
   (table) => [index('buyer_documents_buyer_idx').on(table.buyerId, table.status)],
 );
 
+/** Paid plan periods, entered manually by an admin today (Razorpay later). */
+export const subscriptionGrants = pgTable(
+  'subscription_grants',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => sellers.id, { onDelete: 'cascade' }),
+    plan: planEnum('plan').notNull(),
+    cycle: billingCycleEnum('cycle').notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    amountPaid: numeric('amount_paid', { precision: 12, scale: 2, mode: 'number' }),
+    paymentMethod: paymentMethodEnum('payment_method'),
+    reference: text('reference'),
+    note: text('note'),
+    grantedBy: uuid('granted_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('subscription_grants_seller_idx').on(table.sellerId, table.endsAt)],
+);
+
+/**
+ * Platform-admin access control. Both tables are meant to be edited directly in the database.
+ *   admin_allowed_ips   – only these IPs can reach the admin login at all
+ *   admin_access_codes  – an extra code required at login (rotate it; set expires_at or is_active=false to revoke)
+ */
+export const adminAllowedIps = pgTable('admin_allowed_ips', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ip: text('ip').notNull().unique(),
+  label: text('label'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const adminAccessCodes = pgTable('admin_access_codes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  code: text('code').notNull(),
+  label: text('label'),
+  isActive: boolean('is_active').notNull().default(true),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One-time codes for phone verification (hashed; short-lived). */
+export const otpCodes = pgTable(
+  'otp_codes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    phone: text('phone').notNull(),
+    purpose: text('purpose').notNull(),
+    codeHash: text('code_hash').notNull(),
+    requestIp: text('request_ip'),
+    attempts: integer('attempts').notNull().default(0),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('otp_codes_phone_idx').on(table.phone, table.purpose, table.createdAt),
+    index('otp_codes_ip_idx').on(table.requestIp, table.createdAt),
+  ],
+);
+
 // ---------- inferred row types ----------
 
 export type Category = typeof categories.$inferSelect;
+export type CategoryRequest = typeof categoryRequests.$inferSelect;
 export type Seller = typeof sellers.$inferSelect;
 export type SellerProfile = typeof sellerProfiles.$inferSelect;
 export type SellerOwner = typeof sellerOwners.$inferSelect;
@@ -406,4 +504,6 @@ export type OrderRequest = typeof orderRequests.$inferSelect;
 export type OrderEvent = typeof orderEvents.$inferSelect;
 export type Shipment = typeof shipments.$inferSelect;
 export type SellerDocument = typeof sellerDocuments.$inferSelect;
+export type OtpCode = typeof otpCodes.$inferSelect;
+export type SubscriptionGrant = typeof subscriptionGrants.$inferSelect;
 export type BuyerDocument = typeof buyerDocuments.$inferSelect;

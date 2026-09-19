@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { HeaderSearch } from "@/components/header-search";
 import { AccountNav } from "@/components/account-nav";
+import { BetaBanner } from "@/components/beta-banner";
 import { BuyerAuthProvider } from "@/components/buyer-auth";
 import "./globals.css";
 
@@ -46,6 +47,12 @@ function Header() {
           <Link href="/search" className="text-sm font-medium text-stone-600 hover:text-blue-700">
             Browse all
           </Link>
+          <Link href="/categories" className="hidden text-sm font-medium text-stone-600 hover:text-blue-700 sm:inline">
+            Categories
+          </Link>
+          <Link href="/sellers" className="hidden text-sm font-medium text-stone-600 hover:text-blue-700 sm:inline">
+            Sellers
+          </Link>
           <a
             href={`${SELLER_APP_URL}/register`}
             className="hidden text-sm font-medium text-stone-600 hover:text-blue-700 sm:inline"
@@ -75,7 +82,14 @@ function Footer() {
           <span className="mx-2 text-stone-300">|</span>
           <a href={`${SELLER_APP_URL}/login`} className="hover:underline">Seller login</a>
         </p>
-        <p className="mt-4 text-xs">© {new Date().getFullYear()} {SITE_NAME}</p>
+        <nav aria-label="Legal" className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <Link href="/about" className="hover:underline">About</Link>
+          <Link href="/contact" className="hover:underline">Contact</Link>
+          <Link href="/terms" className="hover:underline">Terms of Use</Link>
+          <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+          <Link href="/refund-policy" className="hover:underline">Refund &amp; Cancellation</Link>
+        </nav>
+        <p className="mt-3 text-xs">© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>
     </footer>
   );
@@ -90,6 +104,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <BuyerAuthProvider>
           <Header />
+          <BetaBanner />
           <div className="flex-1">{children}</div>
           <Footer />
         </BuyerAuthProvider>

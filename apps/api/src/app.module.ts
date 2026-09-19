@@ -16,6 +16,8 @@ import { UploadsModule } from './modules/uploads/uploads.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { BuyerModule } from './modules/buyer/buyer.module.js';
 import { VerificationModule } from './modules/verification/verification.module.js';
+import { OtpModule } from './modules/otp/otp.module.js';
+import { BillingModule } from './modules/billing/billing.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -40,6 +42,8 @@ import { AppService } from './app.service.js';
     AdminModule,
     BuyerModule,
     VerificationModule,
+    OtpModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [
